@@ -1,0 +1,191 @@
+@import "tailwindcss";
+
+@theme {
+  /* Paleta tomada del menú impreso */
+  --color-brand-50: #fff3ea;
+  --color-brand-100: #ffe2cf;
+  --color-brand-200: #ffc4a0;
+  --color-brand-300: #ff9f66;
+  --color-brand-400: #ff7d2e;
+  --color-brand-500: #fc6402;
+  --color-brand-600: #ec5203;
+  --color-brand-700: #c73e00;
+  --color-brand-800: #9a3000;
+
+  --color-ink: #1a1a16;
+  --color-ink-soft: #5b5348;
+  --color-cream: #fbf3e8;
+  --color-sand: #f2dec9;
+  --color-line: #e8d8c4;
+
+  --shadow-card:
+    0 1px 2px rgb(26 26 22 / 0.05), 0 14px 30px -16px rgb(154 48 0 / 0.3);
+  --shadow-tag: 0 3px 0 var(--color-brand-800);
+  --shadow-pop: 0 22px 44px -20px rgb(26 26 22 / 0.55);
+}
+
+@theme inline {
+  --font-display:
+    var(--font-barlow-condensed), "Arial Narrow", Arial, sans-serif;
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+  /* Altura de la barra pegajosa + aire, usada para que los anclajes no queden tapados */
+  --menu-offset: 4.75rem;
+}
+
+@media (min-width: 64rem) {
+  :root {
+    --menu-offset: 6.75rem;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+  /* Evita que la página "salte" cuando se bloquea el scroll al abrir una ventana */
+  scrollbar-gutter: stable;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Ventanas (pedido, opciones, promoción): fondo oscuro y sin scroll de la página detrás */
+body:has(dialog[open]) {
+  overflow: hidden;
+}
+
+dialog::backdrop {
+  background: rgb(26 26 22 / 0.58);
+}
+
+dialog[open]::backdrop {
+  animation: fade-in 0.2s ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+}
+
+@keyframes bump {
+  40% {
+    transform: scale(1.3);
+  }
+}
+
+/* Hoja desde abajo en celular; ventana que aparece desde sm */
+@utility anim-sheet {
+  animation: sheet-up 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  @media (min-width: 40rem) {
+    animation: pop-in 0.22s ease-out;
+  }
+}
+
+/* Pantalla completa desde abajo en celular; panel lateral desde md */
+@utility anim-drawer {
+  animation: sheet-up 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  @media (min-width: 48rem) {
+    animation: drawer-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}
+
+@utility anim-pop {
+  animation: pop-in 0.24s ease-out;
+}
+
+/* Pequeño rebote al cambiar un contador */
+@utility bump {
+  animation: bump 0.32s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog,
+  dialog::backdrop,
+  .anim-pop,
+  .bump {
+    animation: none !important;
+  }
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--color-brand-200);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-ink);
+  outline-offset: 3px;
+}
+
+.on-dark :focus-visible,
+.on-dark:focus-visible {
+  outline-color: #fff;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Puntos sutiles para dar textura a las superficies de color */
+@utility bg-dots {
+  background-image: radial-gradient(
+    rgb(255 255 255 / 0.28) 1.5px,
+    transparent 1.6px
+  );
+  background-size: 20px 20px;
+}
+
+@utility bg-dots-brand {
+  background-image: radial-gradient(
+    rgb(252 100 2 / 0.16) 1.5px,
+    transparent 1.6px
+  );
+  background-size: 20px 20px;
+}
+
+/* Borde inferior recortado, como un tiquete de pedido */
+@utility ticket-edge {
+  --r: 9px;
+  mask: radial-gradient(
+      circle at 50% 100%,
+      transparent var(--r),
+      #000 calc(var(--r) + 0.5px)
+    )
+    0 0 / calc(var(--r) * 2) 100% repeat-x;
+}

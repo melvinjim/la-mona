@@ -36,9 +36,13 @@ export function SetupNotice() {
         <li className="rounded-2xl border border-line bg-white p-4">
           <strong className="font-bold">3. Copia las llaves.</strong>
           <p className="mt-1 text-ink-soft">
-            En <em>Project Settings → API</em>. Ponlas en un archivo{" "}
-            <code className="font-mono text-sm">.env.local</code> (y en Vercel, en{" "}
-            <em>Settings → Environment Variables</em>):
+            Con el botón <em>Connect</em> de arriba, o en{" "}
+            <em>Settings → API Keys</em>. Necesitas la dirección del proyecto y la llave{" "}
+            <em>publishable</em>, la que empieza por{" "}
+            <code className="font-mono text-sm">sb_publishable_</code> (no la{" "}
+            <em>secret</em>, esa no se comparte nunca). Ponlas en un archivo{" "}
+            <code className="font-mono text-sm">.env.local</code> y en Vercel, en{" "}
+            <em>Settings → Environment Variables</em>:
           </p>
           <ul className="mt-2 space-y-1 font-mono text-xs">
             {missing.map((name) => (

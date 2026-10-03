@@ -152,8 +152,9 @@ panel muestra las instrucciones de configuración.
    Eso crea la tabla, los permisos y el bucket de fotos.
 3. **Authentication → Users → Add user**: tu correo y una contraseña, marcando *Auto Confirm User*.
    En **Authentication → Providers → Email** desactiva *Enable sign ups*, para que nadie más se registre.
-4. Copia las dos llaves de **Project Settings → API** a un archivo `.env.local` (hay una plantilla en
-   [`.env.example`](.env.example)):
+4. Copia las llaves con el botón **Connect** de arriba, o en **Settings → API Keys**. Necesitas la
+   dirección del proyecto y la llave **publishable** (empieza por `sb_publishable_`; la *secret* no se
+   comparte nunca). Van a un archivo `.env.local` — hay plantilla en [`.env.example`](.env.example):
 
    ```bash
    NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co

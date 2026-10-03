@@ -128,7 +128,7 @@ function CartPanel({ onClose }: { onClose: () => void }) {
   ];
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-auto flex-col">
       <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
         <h2 className="font-display text-4xl font-extrabold uppercase leading-none">
           Tu pedido
@@ -144,7 +144,7 @@ function CartPanel({ onClose }: { onClose: () => void }) {
       </div>
 
       {lines.length === 0 ? (
-        <div className="grid flex-1 place-items-center px-6 py-12 text-center">
+        <div className="grid flex-auto place-items-center px-6 py-12 text-center">
           <div>
             <span className="mx-auto grid size-20 place-items-center rounded-full bg-brand-50 text-brand-600">
               <ShoppingBag className="size-9" aria-hidden="true" />
@@ -165,8 +165,8 @@ function CartPanel({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       ) : (
-        <form noValidate onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6">
+        <form noValidate onSubmit={submit} className="flex min-h-0 flex-auto flex-col">
+          <div className="min-h-0 flex-auto overflow-y-auto px-5 pb-6">
             {openState === "closed" && (
               <p className="mt-4 flex items-start gap-2.5 rounded-2xl bg-sand px-4 py-3 text-[0.95rem] font-semibold">
                 <TriangleAlert className="mt-0.5 size-5 shrink-0 text-brand-700" aria-hidden="true" />

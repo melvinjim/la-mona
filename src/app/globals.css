@@ -54,7 +54,17 @@ html {
   }
 }
 
-/* Ventanas (pedido, opciones, promoción): fondo oscuro y sin scroll de la página detrás */
+/*
+ * Ventanas (pedido, opciones, promoción). El display va aquí y no como utilidad de
+ * Tailwind (open:flex) porque esa variante depende de :popover-open y :open, que no
+ * todos los Safari conocen; con dialog[open] funciona en cualquiera.
+ */
+dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Fondo oscuro y sin scroll de la página detrás */
 body:has(dialog[open]) {
   overflow: hidden;
 }
@@ -195,8 +205,6 @@ body {
  * como capa fija y la sombra gigante hace las veces de fondo oscuro.
  */
 dialog[data-fallback][open] {
-  position: fixed;
-  inset: 0;
   z-index: 70;
   box-shadow: 0 0 0 100vmax rgb(26 26 22 / 0.58);
 }

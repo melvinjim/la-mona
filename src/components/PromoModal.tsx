@@ -29,7 +29,7 @@ export function PromoModal({ promo }: { promo?: Promo }) {
   return (
     <Modal open={open} onClose={close} label={promo.alt} variant="center">
       {open && (
-        <div className="relative min-h-0 flex-1 overflow-y-auto bg-sand">
+        <div className="relative min-h-0 flex-auto overflow-y-auto bg-sand">
           <Image
             src={promo.image}
             alt={promo.alt}

@@ -2,16 +2,21 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 
+/*
+ * La posición se escribe entera, sin depender de los márgenes automáticos que cada
+ * navegador le pone al <dialog> modal: Safari en iOS no los resuelve igual que Chrome
+ * y la ventana terminaba fuera de la pantalla.
+ */
 const variants = {
   /** Hoja que sube desde abajo en celular; ventana centrada desde sm. */
   sheet:
-    "anim-sheet mx-auto mb-0 mt-auto max-h-[92dvh] w-full rounded-t-[1.75rem] sm:m-auto sm:max-w-lg sm:rounded-[1.75rem]",
+    "anim-sheet inset-x-0 bottom-0 top-auto m-0 max-h-[92dvh] w-full rounded-t-[1.75rem] sm:inset-0 sm:m-auto sm:h-fit sm:max-w-lg sm:rounded-[1.75rem]",
   /** Pantalla completa en celular; panel lateral derecho desde md. */
   drawer:
-    "anim-drawer my-0 ml-auto mr-0 h-dvh max-h-none w-full md:max-w-md md:rounded-l-[1.75rem]",
+    "anim-drawer inset-y-0 left-auto right-0 m-0 h-dvh max-h-none w-full md:w-[28rem] md:rounded-l-[1.75rem]",
   /** Ventana centrada. */
   center:
-    "anim-pop m-auto max-h-[94dvh] w-[min(92vw,30rem)] rounded-[1.75rem]",
+    "anim-pop inset-0 m-auto h-fit max-h-[94dvh] w-[min(92vw,30rem)] rounded-[1.75rem]",
 } as const;
 
 type Props = {
@@ -76,7 +81,7 @@ export function Modal({ open, onClose, label, variant, children }: Props) {
         // Un clic sobre el fondo oscuro llega al <dialog> mismo, no a su contenido.
         if (event.target === event.currentTarget) onClose();
       }}
-      className={`max-w-none overflow-hidden bg-white p-0 text-ink shadow-pop open:flex open:flex-col ${variants[variant]}`}
+      className={`fixed max-w-none overflow-hidden bg-white p-0 text-ink shadow-pop ${variants[variant]}`}
     >
       {children}
     </dialog>

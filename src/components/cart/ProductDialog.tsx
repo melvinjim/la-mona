@@ -88,7 +88,7 @@ function ProductForm({
   };
 
   return (
-    <form onSubmit={submit} noValidate className="flex min-h-0 flex-1 flex-col">
+    <form onSubmit={submit} noValidate className="flex min-h-0 flex-auto flex-col">
       <button
         type="button"
         onClick={onClose}
@@ -98,7 +98,7 @@ function ProductForm({
         <X className="size-5" aria-hidden="true" />
       </button>
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-auto overflow-y-auto">
         {item.image && (
           <div className="relative aspect-[16/9] bg-sand">
             <Image

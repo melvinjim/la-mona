@@ -1,5 +1,6 @@
 import { Clock, MapPin, Phone } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { formatTime } from "@/lib/format";
 import type { ChatLink } from "@/lib/order";
 import type { SiteSettings } from "@/lib/types";
@@ -41,13 +42,21 @@ export function Footer({ site, chat }: Props) {
         <div className="grid gap-10 pt-12 md:grid-cols-[1.2fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-3">
-              <Image
-                src={site.logo}
-                alt=""
-                width={56}
-                height={56}
-                className="size-14 rounded-full"
-              />
+              {/* Entrada discreta al panel administrativo. */}
+              <Link
+                href="/admin"
+                aria-label="Panel administrativo"
+                title="Panel administrativo"
+                className="shrink-0 rounded-full"
+              >
+                <Image
+                  src={site.logo}
+                  alt=""
+                  width={56}
+                  height={56}
+                  className="size-14 rounded-full"
+                />
+              </Link>
               <p className="font-display text-3xl font-extrabold uppercase leading-none tracking-wide">
                 {site.fullName}
               </p>

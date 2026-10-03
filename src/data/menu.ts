@@ -1,3 +1,4 @@
+import { slug } from "@/lib/slug";
 import type { MenuCategory, MenuItem, OptionGroup } from "@/lib/types";
 
 /**
@@ -12,14 +13,6 @@ import type { MenuCategory, MenuItem, OptionGroup } from "@/lib/types";
 type RawCategory = Omit<MenuCategory, "items"> & {
   items: Omit<MenuItem, "id">[];
 };
-
-const slug = (text: string) =>
-  text
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
 
 const acompanantes: OptionGroup = {
   id: "acompanante",

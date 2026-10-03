@@ -189,3 +189,14 @@ body {
     )
     0 0 / calc(var(--r) * 2) 100% repeat-x;
 }
+
+/*
+ * Respaldo para navegadores sin ventanas modales nativas: el <dialog> se muestra
+ * como capa fija y la sombra gigante hace las veces de fondo oscuro.
+ */
+dialog[data-fallback][open] {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  box-shadow: 0 0 0 100vmax rgb(26 26 22 / 0.58);
+}

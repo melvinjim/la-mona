@@ -18,7 +18,7 @@ function Badge({ qty, className }: { qty: number; className: string }) {
 
 /** Botón "+" de cada plato de la lista. */
 export function AddButton({ itemId }: { itemId: string }) {
-  const { catalog, qtyOf, addQuick } = useCart();
+  const { catalog, qtyOf, openProduct } = useCart();
   const item = catalog[itemId];
   if (!item || !item.available) return null;
   const qty = qtyOf(itemId);
@@ -26,7 +26,8 @@ export function AddButton({ itemId }: { itemId: string }) {
   return (
     <button
       type="button"
-      onClick={() => addQuick(itemId)}
+      onClick={() => openProduct(itemId)}
+      aria-haspopup="dialog"
       aria-label={
         qty > 0
           ? `Agregar otro: ${item.orderName} (llevas ${qty})`
@@ -42,7 +43,7 @@ export function AddButton({ itemId }: { itemId: string }) {
 
 /** Etiqueta pulsable de los platos que se muestran como chips (ej. sabores de batido). */
 export function AddChip({ itemId, name }: { itemId: string; name: string }) {
-  const { catalog, qtyOf, addQuick } = useCart();
+  const { catalog, qtyOf, openProduct } = useCart();
   const item = catalog[itemId];
 
   if (!item || !item.available) {
@@ -57,7 +58,8 @@ export function AddChip({ itemId, name }: { itemId: string; name: string }) {
   return (
     <button
       type="button"
-      onClick={() => addQuick(itemId)}
+      onClick={() => openProduct(itemId)}
+      aria-haspopup="dialog"
       aria-label={
         qty > 0
           ? `Agregar otro: ${item.orderName} (llevas ${qty})`

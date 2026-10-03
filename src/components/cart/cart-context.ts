@@ -26,8 +26,8 @@ export type CartContextValue = {
   /** Cuántas unidades de un plato hay en el pedido (todas sus variantes). */
   qtyOf: (itemId: string) => number;
   add: (line: NewLine) => void;
-  /** Agrega 1 directamente, o abre la ventana de opciones si el plato tiene qué elegir. */
-  addQuick: (itemId: string) => void;
+  /** Abre la ventana del plato para elegir opciones, cantidad y nota antes de agregarlo. */
+  openProduct: (itemId: string) => void;
   setQty: (key: string, qty: number) => void;
   remove: (key: string) => void;
   clear: () => void;

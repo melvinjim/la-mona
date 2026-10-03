@@ -59,10 +59,6 @@ export function buildCatalog(menu: MenuCategory[]): Catalog {
   return catalog;
 }
 
-/** Un plato abre la ventana de opciones si hay algo que elegir o aclarar. */
-export const needsDialog = (item: CatalogItem) =>
-  item.options.length > 0 || item.includes.length > 0;
-
 /* ------------------------------------------------------------------ */
 /* Opciones elegidas                                                   */
 /* ------------------------------------------------------------------ */

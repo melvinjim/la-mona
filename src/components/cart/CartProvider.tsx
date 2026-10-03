@@ -12,7 +12,6 @@ import {
 import {
   addLine,
   cartSummary,
-  needsDialog,
   parseCart,
   removeLine,
   resolveCart,
@@ -80,11 +79,10 @@ export function CartProvider({ catalog, checkout, children }: Props) {
         0,
       ),
     add,
-    addQuick: (itemId) => {
+    openProduct: (itemId) => {
       const item = catalog[itemId];
       if (!item || !item.available) return;
-      if (needsDialog(item)) setProductId(itemId);
-      else add({ itemId, optionIds: [], note: "", qty: 1 });
+      setProductId(itemId);
     },
     setQty: (key, qty) => save(setLineQty(current(), key, qty)),
     remove: (key) => save(removeLine(current(), key)),

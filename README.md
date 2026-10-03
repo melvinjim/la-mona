@@ -17,6 +17,10 @@ Abre <http://localhost:3000>. Los cambios se ven al guardar el archivo.
 
 ## Dónde se cambia cada cosa
 
+Los precios, los platos, las fotos, el horario y la promoción se editan desde el [panel
+administrativo](#panel-administrativo), sin tocar código. Los archivos de `src/data` son el respaldo y el
+contenido inicial; lo de abajo aplica cuando todavía no hay panel conectado o quieres cambiar el diseño.
+
 | Qué                                                                  | Archivo                                                         |
 | -------------------------------------------------------------------- | --------------------------------------------------------------- |
 | Platos, precios, categorías y opciones (acompañantes, adicionales)   | `src/data/menu.ts`                                              |
@@ -35,8 +39,9 @@ Para ocultar un plato por un rato sin borrarlo: `available: false` (se muestra c
 
 ## Carrito y pedido por WhatsApp
 
-Cada plato tiene un botón **+**. Los que no tienen nada que elegir (fritos, jugos, gaseosas) se agregan de una vez;
-los demás abren una ventana para elegir (acompañante, agua o leche, adicionales), poner una nota y la cantidad.
+Cada plato tiene un botón **+** que abre su ventana: foto, precio, lo que haya que elegir (acompañante, agua o
+leche, adicionales), una nota y la cantidad. Siempre se abre, también en gaseosas o fritos, para poder ajustar
+cantidad y nota antes de agregar.
 El total se suma solo. En **Mi pedido** el cliente escribe su nombre, elige domicilio o recoger (con dirección),
 el medio de pago si quiere y comentarios, y al pulsar **Enviar pedido por WhatsApp** se abre el chat del
 restaurante con el mensaje ya escrito:
@@ -69,7 +74,8 @@ Pago: Bancolombia
 ## Ventana de promoción
 
 Una imagen que aparece sola cuando alguien entra al sitio. Al cerrarla no vuelve a salir en ese navegador
-hasta que cambie el `id` de la promoción o la persona borre los datos del sitio. En `src/data/site.ts`:
+hasta que cambie el `id` de la promoción o la persona borre los datos del sitio. Se edita en el panel
+administrativo (pestaña **Ajustes**); sin panel, en `src/data/site.ts`:
 
 ```ts
 promo: {
@@ -96,7 +102,8 @@ Estos datos no estaban en la imagen del menú, por eso no aparecen todavía:
 
 ## Fotos
 
-Por ahora, copia las imágenes a `public/menu/` y referéncialas:
+Desde el panel administrativo se suben con el botón **Subir foto** de cada plato, categoría o de la portada;
+quedan guardadas en Supabase Storage. Sin panel, copia las imágenes a `public/menu/` y referéncialas:
 
 ```ts
 { name: "Lomo asado", price: 15000, image: "/menu/lomo-asado.jpg" }   // foto del plato
@@ -106,8 +113,8 @@ Por ahora, copia las imágenes a `public/menu/` y referéncialas:
 En `src/data/site.ts`, `heroImage: "/portada.jpg"` pone una foto en la portada. Next.js redimensiona y
 comprime las imágenes solo, así que se pueden subir fotos tomadas con el celular.
 
-Cuando las fotos las suba el panel administrativo desde un servicio externo, agrega su dominio en
-`next.config.ts` → `images.remotePatterns` (Vercel Blob ya está incluido).
+Si algún día usas otro servicio de almacenamiento, agrega su dominio en `next.config.ts` →
+`images.remotePatterns` (Supabase y Vercel Blob ya están incluidos).
 
 ## Desplegar en Vercel
 
@@ -128,20 +135,46 @@ Cuando las fotos las suba el panel administrativo desde un servicio externo, agr
 
 Sin GitHub también se puede: `npx vercel` desde esta carpeta.
 
-## Panel administrativo (todavía no existe)
+## Panel administrativo
 
-Hoy los cambios (precios, platos agotados, promoción, fotos) se hacen editando `src/data/menu.ts` y
-`src/data/site.ts` y volviendo a publicar. El sitio ya está preparado para conectar un panel, pero el panel
-(login, formularios, carga de fotos) está por construirse.
+Desde el celular, en `/admin` (o tocando el logo del pie de página), se editan precios, platos agotados,
+fotos, horario, contacto y la promoción. Cada vez que guardas, el sitio se actualiza al instante.
 
-El sitio lee todo el contenido desde un único lugar, `src/lib/content.ts` (`getMenu()` y `getSite()`),
-que hoy devuelve los archivos de `src/data`. Para conectar el panel:
+El contenido vive en **Supabase**: el menú y los datos del restaurante en la tabla `content` (dos filas,
+`menu` y `site`, con la misma forma de `src/lib/types.ts`) y las fotos en el bucket `menu` de Supabase
+Storage. Si Supabase no está configurado, el sitio sigue funcionando con los archivos de `src/data` y el
+panel muestra las instrucciones de configuración.
 
-1. Guarda el menú y los datos del sitio (incluida la promoción) en una base de datos con la misma forma de
-   `src/lib/types.ts`, y las fotos en un almacenamiento (Vercel Blob, Supabase Storage).
-2. Reemplaza el cuerpo de `getMenu()` y `getSite()` para consultar esa base. La página y los componentes no cambian.
-3. Cuando el administrador guarde un cambio, llama a `revalidatePath("/")` en su acción para publicarlo al instante.
-   Mientras tanto, la página se actualiza sola cada 10 minutos (`revalidate` en `src/app/page.tsx`).
+### Conectarlo (una sola vez)
+
+1. Crea un proyecto gratis en [supabase.com](https://supabase.com).
+2. Abre **SQL Editor**, pega el archivo [`supabase/schema.sql`](supabase/schema.sql) y pulsa **Run**.
+   Eso crea la tabla, los permisos y el bucket de fotos.
+3. **Authentication → Users → Add user**: tu correo y una contraseña, marcando *Auto Confirm User*.
+   En **Authentication → Providers → Email** desactiva *Enable sign ups*, para que nadie más se registre.
+4. Copia las dos llaves de **Project Settings → API** a un archivo `.env.local` (hay una plantilla en
+   [`.env.example`](.env.example)):
+
+   ```bash
+   NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=...
+   ```
+
+   En Vercel, las mismas en *Settings → Environment Variables*, y vuelve a desplegar.
+5. Entra a `/admin`, inicia sesión y pulsa **Copiar el menú actual a Supabase**. A partir de ahí el menú se
+   edita desde el panel y los archivos de `src/data` quedan solo como respaldo.
+
+### Cómo está hecho
+
+- `src/lib/content.ts` es el único punto de lectura (`getMenu()` y `getSite()`): intenta Supabase y, si no
+  hay nada guardado o falla, devuelve los archivos de `src/data`.
+- Al guardar se llama `revalidatePath("/")`, por eso el cambio se publica de inmediato. Sin eso, la página
+  se regenera sola cada 10 minutos (`revalidate` en `src/app/page.tsx`).
+- Las fotos se suben desde el navegador directo a Supabase Storage, sin pasar por el servidor; así no
+  estorba el límite de tamaño de Vercel. El dominio ya está permitido en `next.config.ts`.
+- `src/proxy.ts` mantiene viva la sesión del panel. Solo corre en `/admin`.
+- Las opciones al pedir (acompañantes, adicionales, agua o leche) y los "incluidos" se editan como JSON,
+  dentro de *Avanzado* en cada categoría: cambian poco y no valía la pena un formulario entero.
 
 ## Comandos
 

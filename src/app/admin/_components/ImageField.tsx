@@ -3,6 +3,7 @@
 import { ImagePlus, Loader2, X } from "lucide-react";
 import Image from "next/image";
 import { useId, useState } from "react";
+import { prepareImage } from "@/lib/image";
 import { slug } from "@/lib/slug";
 import { browserClient } from "@/lib/supabase/browser-client";
 import { BUCKET } from "@/lib/supabase/config";
@@ -19,8 +20,8 @@ type Props = {
 const MAX_MB = 10;
 
 /**
- * Foto guardada en Supabase Storage. Se sube directo desde el navegador —sin pasar
- * por el servidor— y en el formulario solo viaja la dirección de la imagen.
+ * Foto guardada en Supabase Storage. Se reduce y se sube directo desde el navegador —sin
+ * pasar por el servidor— y en el formulario solo viaja la dirección de la imagen.
  */
 export function ImageField({ name, label, hint, defaultValue = "" }: Props) {
   const [url, setUrl] = useState(defaultValue);
@@ -42,14 +43,14 @@ export function ImageField({ name, label, hint, defaultValue = "" }: Props) {
 
     setBusy(true);
     try {
-      const extension = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const image = await prepareImage(file);
       const base = slug(file.name.replace(/\.[^.]+$/, "")) || "foto";
-      const path = `${Date.now()}-${base}.${extension}`;
+      const path = `${Date.now()}-${base}.${image.extension}`;
 
       const supabase = browserClient();
       const { error: uploadError } = await supabase.storage
         .from(BUCKET)
-        .upload(path, file, { cacheControl: "31536000", contentType: file.type });
+        .upload(path, image.blob, { cacheControl: "31536000", contentType: image.type });
       if (uploadError) throw uploadError;
 
       const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);

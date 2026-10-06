@@ -36,6 +36,11 @@ export type OptionGroup = {
   required?: boolean;
   /** `true`: se pueden marcar varias opciones; si no, solo una. */
   multiple?: boolean;
+  /**
+   * `true`: cada opción se pide con un contador, para poder repetirla
+   * (ej. 2 adicionales de queso + 1 de chicharrón). Cada unidad suma su `price`.
+   */
+  counted?: boolean;
   /** `false`: no se muestra como recuadro en el menú, solo al momento de pedir. */
   showInMenu?: boolean;
   options: OptionChoice[];

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useId, useState, type FormEvent } from "react";
 import {
   MAX_NOTE,
+  MAX_OPTION_QTY,
   missingGroups,
   pickedOptionIds,
   pickedSurcharge,
@@ -66,6 +67,14 @@ function ProductForm({
           ? selected.filter((id) => id !== optionId)
           : [...selected, optionId],
       };
+    });
+  };
+
+  const setCount = (group: OptionGroup, optionId: string, count: number) => {
+    setPicked((current) => {
+      const others = (current[group.id] ?? []).filter((id) => id !== optionId);
+      const repeated = Array.from({ length: count }, () => optionId);
+      return { ...current, [group.id]: [...others, ...repeated] };
     });
   };
 
@@ -153,13 +162,46 @@ function ProductForm({
                   >
                     {groupMissing
                       ? "Elige una opción"
-                      : group.required
-                        ? "Elige una"
-                        : "Opcional"}
+                      : group.counted
+                        ? "Agrega las que quieras"
+                        : group.required
+                          ? "Elige una"
+                          : "Opcional"}
                   </span>
                 </legend>
                 <div className="space-y-2">
-                  {group.options.map((option) => (
+                  {group.counted &&
+                    group.options.map((option) => {
+                      const count = (picked[group.id] ?? []).filter(
+                        (id) => id === option.id,
+                      ).length;
+                      return (
+                        <div
+                          key={option.id}
+                          className={`flex items-center gap-3 rounded-2xl border-2 bg-white py-2 pl-4 pr-2 transition ${count > 0 ? "border-ink bg-brand-50" : "border-line"}`}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="text-base font-semibold">{option.name}</p>
+                            <p
+                              className={`text-sm font-bold ${option.price ? "text-brand-700" : "text-emerald-700"}`}
+                            >
+                              {option.price
+                                ? `+${formatCOP(option.price)} c/u`
+                                : "Incluido"}
+                            </p>
+                          </div>
+                          <Stepper
+                            value={count}
+                            min={0}
+                            max={MAX_OPTION_QTY}
+                            editable
+                            label={option.name}
+                            onChange={(n) => setCount(group, option.id, n)}
+                          />
+                        </div>
+                      );
+                    })}
+                  {!group.counted && group.options.map((option) => (
                     <label
                       key={option.id}
                       className="flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-line bg-white px-4 py-3 transition hover:border-ink/40 has-[:checked]:border-ink has-[:checked]:bg-brand-50 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ink"
@@ -208,9 +250,16 @@ function ProductForm({
 
       <div className="flex items-center gap-3 border-t border-line bg-white px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 sm:px-7">
         <Stepper value={qty} onChange={setQty} label={item.name} />
-        <button type="submit" className={buttonClass("primary", "lg", "min-w-0 flex-1")}>
+        <button
+          type="submit"
+          className={buttonClass(
+            "primary",
+            "lg",
+            "min-w-0 flex-1 gap-2! px-4! text-base! sm:gap-2.5! sm:px-7! sm:text-lg!",
+          )}
+        >
           <span className="truncate">Agregar</span>
-          <span className="font-display text-2xl leading-none">
+          <span className="whitespace-nowrap font-display text-xl leading-none sm:text-2xl">
             {formatCOP(unitPrice * qty)}
           </span>
         </button>

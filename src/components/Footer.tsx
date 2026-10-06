@@ -45,6 +45,7 @@ export function Footer({ site, chat }: Props) {
               {/* Entrada discreta al panel administrativo. */}
               <Link
                 href="/admin"
+                prefetch={false}
                 aria-label="Panel administrativo"
                 title="Panel administrativo"
                 className="shrink-0 rounded-full"

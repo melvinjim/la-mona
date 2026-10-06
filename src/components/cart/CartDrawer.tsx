@@ -4,7 +4,6 @@ import { Check, Copy, ShoppingBag, TriangleAlert, X } from "lucide-react";
 import { useId, useState, type FormEvent } from "react";
 import { optionLabel, type ResolvedLine } from "@/lib/cart";
 import { formatCOP, formatTimeWithArticle } from "@/lib/format";
-import { minutesNow } from "@/lib/hours";
 import { customerStore } from "@/lib/local-store";
 import {
   buildOrderMessage,
@@ -51,7 +50,7 @@ function LineDetails({ line }: { line: ResolvedLine }) {
     <ul className="mt-0.5 space-y-0.5 text-sm text-ink-soft">
       {chosen.map(({ group, chosen: options }) => (
         <li key={group.id}>
-          {group.title}: {options.map((option) => optionLabel(option)).join(", ")}
+          {group.title}: {options.map((choice) => optionLabel(choice)).join(", ")}
         </li>
       ))}
       {line.note && <li>Nota: {line.note}</li>}
@@ -97,7 +96,7 @@ function CartPanel({ onClose }: { onClose: () => void }) {
       lines,
       customer,
       comments,
-      minutes: minutesNow(checkout.timeZone),
+      timeZone: checkout.timeZone,
     });
 
     if (checkout.whatsapp) {

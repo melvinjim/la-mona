@@ -56,13 +56,13 @@ export function SiteForm({ site }: { site: SiteSettings }) {
         <div className="grid gap-3 sm:grid-cols-2">
           <Field
             label="WhatsApp"
-            hint="Con indicativo y solo dígitos: 573001234567. Ahí llegan los pedidos."
+            hint="Solo dígitos. Si escribes el celular de 10 dígitos se le agrega el 57 de Colombia. Ahí llegan los pedidos."
           >
             <input
               name="whatsapp"
               inputMode="numeric"
               defaultValue={old.text("whatsapp", site.whatsapp)}
-              placeholder="573001234567"
+              placeholder="3019629614"
               className={inputClass}
             />
           </Field>

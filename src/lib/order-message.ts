@@ -1,5 +1,5 @@
 import { optionLabel, type ResolvedLine } from "./cart";
-import { formatCOP } from "./format";
+import { formatCOP, formatTime } from "./format";
 
 export type Delivery = "domicilio" | "recoger";
 
@@ -42,55 +42,82 @@ export function greetingFor(minutesSinceMidnight: number): string {
 
 const oneLine = (text: string) => text.replace(/\s+/g, " ").trim();
 
+/** Fecha, hora y minutos desde la medianoche en la zona horaria del restaurante. */
+function localMoment(timeZone: string, now: Date) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "00";
+  const hour = Number(get("hour"));
+  const minute = Number(get("minute"));
+  return {
+    date: `${get("day")}/${get("month")}/${get("year")}`,
+    time: formatTime(`${get("hour")}:${get("minute")}`),
+    minutes: hour * 60 + minute,
+  };
+}
+
 type MessageInput = {
   lines: ResolvedLine[];
   customer: Customer;
   comments: string;
-  minutes: number;
+  timeZone: string;
+  /** Momento del pedido; se puede fijar para probar. */
+  now?: Date;
 };
 
 /**
  * Mensaje que llega al WhatsApp del restaurante. Solo cuenta las líneas "ok";
- * el total se calcula aquí con los precios vigentes del menú.
+ * el total se calcula aquí con los precios vigentes del menú y va al final.
  */
 export function buildOrderMessage({
   lines,
   customer,
   comments,
-  minutes,
+  timeZone,
+  now = new Date(),
 }: MessageInput): string {
   const items = lines.filter((line) => line.status === "ok");
   const total = items.reduce((sum, line) => sum + line.total, 0);
+  const moment = localMoment(timeZone, now);
 
   const parts = [
-    `Hola, ${greetingFor(minutes)}. Quisiera hacer este pedido:`,
+    `Hola, ${greetingFor(moment.minutes)} 👋 Quisiera hacer este pedido:`,
     "",
+    `🗓️ ${moment.date} · ⏰ ${moment.time}`,
+    "",
+    `*Tipo de servicio:* ${customer.delivery === "domicilio" ? "Domicilio" : "Recoger en el local"}`,
+    `*Nombre:* ${oneLine(customer.name)}`,
   ];
+  if (customer.delivery === "domicilio") {
+    parts.push(`*Dirección:* ${oneLine(customer.address)}`);
+  }
 
+  parts.push("", "*📝 Pedido*");
   for (const line of items) {
-    parts.push(`${line.qty} x ${line.item.orderName} — ${formatCOP(line.total)}`);
+    parts.push(`*${line.qty} x ${line.item.orderName}* — ${formatCOP(line.total)}`);
+    const suffix = line.qty > 1 ? " c/u" : "";
     for (const { group, chosen } of line.choices) {
       if (chosen.length === 0) continue;
-      const suffix = line.qty > 1 ? " c/u" : "";
       parts.push(
-        `   ${group.title}: ${chosen.map((option) => optionLabel(option, suffix)).join(", ")}`,
+        `   • ${group.title}: ${chosen.map((choice) => optionLabel(choice, suffix)).join(", ")}`,
       );
     }
-    if (line.note) parts.push(`   Nota: ${line.note}`);
+    if (line.note) parts.push(`   • Nota: ${line.note}`);
   }
-
-  parts.push("", `*Total: ${formatCOP(total)}*`, "");
-  parts.push(`Nombre: ${oneLine(customer.name)}`);
-  if (customer.delivery === "domicilio") {
-    parts.push("Entrega: Domicilio");
-    parts.push(`Dirección: ${oneLine(customer.address)}`);
-  } else {
-    parts.push("Entrega: Recoger en el local");
-  }
-  if (customer.payment) parts.push(`Pago: ${customer.payment}`);
 
   const extra = comments.trim().replace(/\n{3,}/g, "\n\n");
-  if (extra) parts.push(`Comentarios: ${extra}`);
+  if (extra) parts.push("", "*💬 Comentarios*", extra);
+
+  parts.push("", "*💲 Pago*");
+  if (customer.payment) parts.push(`Medio de pago: ${customer.payment}`);
+  parts.push(`*Total a pagar: ${formatCOP(total)}*`);
 
   return parts.join("\n");
 }

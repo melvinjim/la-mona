@@ -66,14 +66,27 @@ export function buildCatalog(menu: MenuCategory[]): Catalog {
 export const optionKey = (groupId: string, optionId: string) =>
   `${groupId}:${optionId}`;
 
-/** Texto de una opción con su recargo: "Papas fritas (+$3.000)". */
-export function optionLabel(option: OptionChoice, suffix = ""): string {
+/** Máximo de unidades de una misma opción con contador. */
+export const MAX_OPTION_QTY = 20;
+
+/** Una opción elegida y cuántas veces ("2 x Queso"). */
+export type ChosenOption = { option: OptionChoice; count: number };
+
+/** Texto de una opción con su recargo: "Papas fritas (+$3.000)" o "2 x Queso (+$8.000)". */
+export function optionLabel(
+  { option, count }: ChosenOption,
+  suffix = "",
+): string {
+  const name = count > 1 ? `${count} x ${option.name}` : option.name;
   return option.price
-    ? `${option.name} (+${formatCOP(option.price)}${suffix})`
-    : option.name;
+    ? `${name} (+${formatCOP(option.price * count)}${suffix})`
+    : name;
 }
 
-/** Selección en curso en la ventana de opciones: id del grupo -> ids de las opciones marcadas. */
+/**
+ * Selección en curso en la ventana de opciones: id del grupo -> ids de las opciones marcadas.
+ * En los grupos con contador un mismo id se repite tantas veces como unidades.
+ */
 export type Picked = Record<string, string[]>;
 
 export const missingGroups = (item: CatalogItem, picked: Picked) =>
@@ -88,7 +101,8 @@ export function pickedSurcharge(item: CatalogItem, picked: Picked): number {
   let sum = 0;
   for (const group of item.options) {
     for (const option of group.options) {
-      if (picked[group.id]?.includes(option.id)) sum += option.price ?? 0;
+      const count = (picked[group.id] ?? []).filter((id) => id === option.id).length;
+      sum += (option.price ?? 0) * count;
     }
   }
   return sum;
@@ -178,7 +192,7 @@ export type ResolvedLine = {
   item: CatalogItem;
   qty: number;
   note: string;
-  choices: { group: OptionGroup; chosen: OptionChoice[] }[];
+  choices: { group: OptionGroup; chosen: ChosenOption[] }[];
   unitPrice: number;
   total: number;
   /**
@@ -189,22 +203,27 @@ export type ResolvedLine = {
 };
 
 export function resolveLine(line: StoredLine, item: CatalogItem): ResolvedLine {
-  const picked = new Set(line.optionIds);
+  const counts = new Map<string, number>();
+  for (const id of line.optionIds) counts.set(id, (counts.get(id) ?? 0) + 1);
+
   const choices = item.options.map((group) => ({
     group,
-    chosen: group.options.filter((option) =>
-      picked.has(optionKey(group.id, option.id)),
-    ),
+    chosen: group.options.flatMap((option): ChosenOption[] => {
+      const times = counts.get(optionKey(group.id, option.id)) ?? 0;
+      if (times === 0) return [];
+      return [{ option, count: group.counted ? Math.min(times, MAX_OPTION_QTY) : 1 }];
+    }),
   }));
 
   const surcharge = choices.reduce(
-    (sum, { chosen }) => sum + chosen.reduce((s, o) => s + (o.price ?? 0), 0),
+    (sum, { chosen }) =>
+      sum + chosen.reduce((s, { option, count }) => s + (option.price ?? 0) * count, 0),
     0,
   );
   const invalid = choices.some(
     ({ group, chosen }) =>
       (group.required && chosen.length === 0) ||
-      (!group.multiple && chosen.length > 1),
+      (!group.multiple && !group.counted && chosen.length > 1),
   );
   const unitPrice = item.price + surcharge;
 

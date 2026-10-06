@@ -47,28 +47,37 @@ el medio de pago si quiere y comentarios, y al pulsar **Enviar pedido por WhatsA
 restaurante con el mensaje ya escrito:
 
 ```
-Hola, buenos días. Quisiera hacer este pedido:
+Hola, buenos días 👋 Quisiera hacer este pedido:
 
-2 x Huevo perico — $24.000
-   Acompañantes: Papas fritas (+$3.000 c/u)
-   Nota: sin cebolla
-1 x Mora (Jugos batidos) — $7.000
-   Prepáralo en: Leche
+🗓️ 02/10/2026 · ⏰ 8:05 a.m.
 
-*Total: $31.000*
+*Tipo de servicio:* Domicilio
+*Nombre:* Juan Pérez
+*Dirección:* Calle 10 # 5-20, apto 301
 
-Nombre: Juan Pérez
-Entrega: Domicilio
-Dirección: Calle 10 # 5-20, apto 301
-Pago: Bancolombia
+*📝 Pedido*
+*2 x Huevo perico* — $30.000
+   • Acompañante: Yuca
+   • Adicionales: 2 x Papas fritas (+$6.000 c/u)
+   • Nota: sin cebolla
+*1 x Mora (Jugos batidos)* — $7.000
+   • Prepáralo en: Leche
+
+*💬 Comentarios*
+Tocar el timbre
+
+*💲 Pago*
+Medio de pago: Bancolombia
+*Total a pagar: $37.000*
 ```
 
-- El saludo cambia según la hora de Colombia (buenos días / buenas tardes / buenas noches). Se edita en
-  `greetingFor` y `buildOrderMessage`, en `src/lib/order-message.ts`.
+- El saludo cambia según la hora de Colombia (buenos días / buenas tardes / buenas noches). El formato se edita en
+  `buildOrderMessage`, en `src/lib/order-message.ts`.
 - El pedido se guarda en el navegador del cliente (solo qué plato, opciones y cantidad). Los precios se calculan siempre
   con el menú vigente: si cambias un precio o marcas un plato como agotado, el carrito del cliente se actualiza solo.
 - Cuando se agregan opciones a un plato, se definen en la categoría (`options` en `src/data/menu.ts`): una opción con
-  `price` suma ese valor; sin `price` va incluida. `required: true` obliga a elegir; `multiple: true` permite marcar varias.
+  `price` suma ese valor; sin `price` va incluida. `required: true` obliga a elegir; `multiple: true` permite marcar varias; `counted: true` muestra un contador para pedir varias unidades (ej. 2 adicionales de chorizo, cada uno suma su precio; la cantidad también se puede escribir, ej. 15).
+  Todo lo que se cobra aparte (papas fritas, cayeye, queso, chicharrón…) va en un grupo `counted`; lo que viene incluido y se elige una sola vez (yuca, patacones…) va en un grupo normal.
 - Sin número de WhatsApp configurado, el carrito ofrece **Copiar mi pedido** para pegarlo en el chat de Instagram.
 
 ## Ventana de promoción
@@ -91,8 +100,6 @@ promo: {
 
 Estos datos no estaban en la imagen del menú, por eso no aparecen todavía:
 
-- **Número de WhatsApp** (`whatsapp` en `src/data/site.ts`, con indicativo, ej. `"573001234567"`).
-  Es el destino de los pedidos del carrito; sin él no se pueden enviar.
 - **Dirección, teléfono y enlace de Google Maps** (`address`, `phone`, `mapsUrl`). Al llenarlos aparecen
   solos en la franja de información y en el pie de página.
 - **Horario**: el menú dice "5:00 a.m. a 1:00 a.m."; confirma si el cierre es a la 1:00 a.m. o a la 1:00 p.m.
@@ -168,14 +175,22 @@ panel muestra las instrucciones de configuración.
 ### Cómo está hecho
 
 - `src/lib/content.ts` es el único punto de lectura (`getMenu()` y `getSite()`): intenta Supabase y, si no
-  hay nada guardado o falla, devuelve los archivos de `src/data`.
+  hay nada guardado o falla, devuelve los archivos de `src/data`. Lo guardado pasa antes por
+  `src/lib/content-schema.ts`, que descarta o corrige lo que tenga mal la forma, para que un dato dañado
+  nunca rompa la página pública.
 - Al guardar se llama `revalidatePath("/")`, por eso el cambio se publica de inmediato. Sin eso, la página
   se regenera sola cada 10 minutos (`revalidate` en `src/app/page.tsx`).
-- Las fotos se suben desde el navegador directo a Supabase Storage, sin pasar por el servidor; así no
-  estorba el límite de tamaño de Vercel. El dominio ya está permitido en `next.config.ts`.
+- Las fotos se reducen en el navegador (máx. 1600 px, WebP; `src/lib/image.ts`) y se suben directo a Supabase
+  Storage, sin pasar por el servidor; así se pueden tomar con el celular, no estorba el límite de tamaño de
+  Vercel y rinde el espacio gratis. El dominio ya está permitido en `next.config.ts`.
 - `src/proxy.ts` mantiene viva la sesión del panel. Solo corre en `/admin`.
-- Las opciones al pedir (acompañantes, adicionales, agua o leche) y los "incluidos" se editan como JSON,
-  dentro de *Avanzado* en cada categoría: cambian poco y no valía la pena un formulario entero.
+- Precios: se escriben o se suben y bajan de a $500 con los botones − y +. Los platos se ordenan con las
+  flechas de cada uno y las categorías con *Subir* / *Bajar*.
+- **Opciones al pedir** (acompañante, adicionales, agua o leche) y los "incluidos" se editan en cada categoría,
+  en *Opciones al pedir*, sin tocar código. Cada grupo se elige de una de tres formas: una sola opción,
+  varias, o **con cantidad** (botones + y −, para pedir 2 de queso o 10 de papas). Todo lo que se cobra
+  aparte conviene dejarlo "con cantidad". El editor avisa si un grupo tiene precios y no lleva cantidad.
+- El WhatsApp se puede escribir con o sin el 57 de Colombia (`3019629614` o `573019629614`).
 
 ## Comandos
 

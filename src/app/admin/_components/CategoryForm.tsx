@@ -4,20 +4,13 @@ import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import { useActionState } from "react";
 import type { MenuCategory } from "@/lib/types";
 import { saveCategory, type FormState } from "../actions";
+import { ChoiceGrid } from "./ChoiceGrid";
+import { IconPicker } from "./IconPicker";
 import { ImageField } from "./ImageField";
+import { OptionsEditor } from "./OptionsEditor";
+import { PriceField } from "./PriceField";
 import { SubmitButton } from "./SubmitButton";
 import { Alert, Field, inputClass, labelClass, restore, Toggle } from "./ui";
-
-const ICON_LABELS: Record<string, string> = {
-  egg: "Huevo (desayunos)",
-  plate: "Plato (ejecutivos)",
-  flame: "Llama (asados)",
-  banana: "Banano (cayeye)",
-  fried: "Frito",
-  citrus: "Cítrico (jugos)",
-  cup: "Vaso (batidos)",
-  water: "Agua (gaseosas)",
-};
 
 type Props = {
   category: MenuCategory;
@@ -56,6 +49,20 @@ export function CategoryForm({ category, index, total }: Props) {
       <div className="border-t border-line px-4 pb-5 pt-4 sm:px-5">
         {/* La clave vuelve a dibujar el formulario con lo recién guardado. */}
         <form key={JSON.stringify(category)} action={action} className="space-y-5">
+          {/*
+            Botón por defecto: lo que dispara la tecla Enter dentro de un campo. Sin él, Enter
+            pulsaría el primer botón del formulario, que es el de eliminar un plato.
+          */}
+          <button
+            type="submit"
+            name="intent"
+            value="save"
+            tabIndex={-1}
+            aria-hidden="true"
+            className="sr-only"
+          >
+            Guardar
+          </button>
           <input type="hidden" name="categoryId" value={category.id} />
           <input type="hidden" name="itemCount" value={category.items.length} />
 
@@ -76,19 +83,6 @@ export function CategoryForm({ category, index, total }: Props) {
                 className={inputClass}
               />
             </Field>
-            <Field label="Ícono">
-              <select
-                name="icon"
-                defaultValue={old.text("icon", category.icon)}
-                className={inputClass}
-              >
-                {Object.entries(ICON_LABELS).map(([value, text]) => (
-                  <option key={value} value={value}>
-                    {text}
-                  </option>
-                ))}
-              </select>
-            </Field>
             <Field
               label="Precio único"
               hint="Si todos valen lo mismo (ej. batidos). Vacío = cada plato con su precio."
@@ -108,16 +102,28 @@ export function CategoryForm({ category, index, total }: Props) {
                 className={inputClass}
               />
             </Field>
-            <Field label="Cómo se ven los platos">
-              <select
+            <div className="sm:col-span-2">
+              <IconPicker defaultValue={old.text("icon", category.icon) as string} />
+            </div>
+            <div className="sm:col-span-2">
+              <ChoiceGrid
                 name="layout"
-                defaultValue={old.text("layout", category.layout ?? "list")}
-                className={inputClass}
-              >
-                <option value="list">Lista con precio</option>
-                <option value="chips">Etiquetas (sabores)</option>
-              </select>
-            </Field>
+                legend="Cómo se ven los platos"
+                defaultValue={old.text("layout", category.layout ?? "list") as "list" | "chips"}
+                choices={[
+                  {
+                    value: "list",
+                    label: "Lista con precio",
+                    hint: "Cada plato en su fila con su precio. Ej: desayunos, asados.",
+                  },
+                  {
+                    value: "chips",
+                    label: "Etiquetas",
+                    hint: "Los platos como botones pequeños, todos al mismo precio. Ej: sabores de batido.",
+                  },
+                ]}
+              />
+            </div>
             <div className="sm:col-span-2">
               <ImageField
                 name="image"
@@ -138,7 +144,7 @@ export function CategoryForm({ category, index, total }: Props) {
                 >
                   <input type="hidden" name={`item-${row}-id`} value={item.id} />
 
-                  <div className="grid gap-2.5 sm:grid-cols-[1fr_8rem]">
+                  <div className="grid gap-2.5 sm:grid-cols-[1fr_12.5rem]">
                     <Field label="Plato">
                       <input
                         name={`item-${row}-name`}
@@ -146,15 +152,18 @@ export function CategoryForm({ category, index, total }: Props) {
                         className={inputClass}
                       />
                     </Field>
-                    <Field label="Precio">
-                      <input
-                        name={`item-${row}-price`}
-                        inputMode="numeric"
-                        defaultValue={old.text(`item-${row}-price`, item.price)}
-                        placeholder={category.price ? String(category.price) : "0"}
-                        className={inputClass}
-                      />
-                    </Field>
+                    <div className="min-w-0">
+                      <span className={labelClass}>Precio</span>
+                      <div className="mt-1.5">
+                        <PriceField
+                          name={`item-${row}-price`}
+                          label={item.name}
+                          defaultValue={old.text(`item-${row}-price`, item.price)}
+                          placeholder={category.price ? String(category.price) : "0"}
+                          startFrom={category.price}
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="mt-2.5">
@@ -182,6 +191,18 @@ export function CategoryForm({ category, index, total }: Props) {
                       label="Disponible"
                       defaultChecked={old.flag(`item-${row}-available`, item.available !== false)}
                     />
+                    {row > 0 && (
+                      <SubmitButton intent={`item-up-${row}`} variant="ghost">
+                        <ChevronUp className="size-4" aria-hidden="true" />
+                        <span className="sr-only">Subir {item.name}</span>
+                      </SubmitButton>
+                    )}
+                    {row < category.items.length - 1 && (
+                      <SubmitButton intent={`item-down-${row}`} variant="ghost">
+                        <ChevronDown className="size-4" aria-hidden="true" />
+                        <span className="sr-only">Bajar {item.name}</span>
+                      </SubmitButton>
+                    )}
                     <SubmitButton
                       intent={`remove-item-${row}`}
                       variant="ghost"
@@ -204,21 +225,15 @@ export function CategoryForm({ category, index, total }: Props) {
           </div>
 
           <details className="rounded-xl border border-line bg-cream/60 p-3">
-            <summary className="cursor-pointer text-sm font-bold text-ink-soft">
-              Avanzado: opciones al pedir e incluidos
+            <summary className="cursor-pointer text-sm font-bold">
+              Opciones al pedir: acompañante, adicionales…
+              <span className="ml-2 rounded-full bg-sand px-2 py-0.5 text-xs font-bold text-ink-soft">
+                {category.options?.length ?? 0}
+              </span>
             </summary>
-            <p className="mt-2 text-xs text-ink-soft">
-              JSON con <code>options</code> (lo que el cliente elige: acompañantes,
-              adicionales, agua o leche) e <code>includes</code> (lo que ya viene con el
-              plato). Déjalo vacío si la categoría no lleva nada de eso.
-            </p>
-            <textarea
-              name="advanced"
-              defaultValue={old.text("advanced", advanced)}
-              rows={8}
-              spellCheck={false}
-              className={`${inputClass} mt-2 font-mono text-xs`}
-            />
+            <div className="mt-3">
+              <OptionsEditor name="advanced" initial={advanced} />
+            </div>
           </details>
 
           <Alert state={state} />

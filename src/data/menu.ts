@@ -7,21 +7,32 @@ import type { MenuCategory, MenuItem, OptionGroup } from "@/lib/types";
  * - Foto de un plato: `image: "/menu/mi-foto.jpg"` (archivo en public/menu).
  * - Ocultar un plato por un rato: `available: false` (se muestra como "Agotado" y no se puede pedir).
  * - Opciones al pedir (acompañantes, adicionales...): `options` de la categoría. Una opción con
- *   `price` suma ese valor al pedido; sin `price` va incluida.
+ *   `price` suma ese valor al pedido; sin `price` va incluida. Todo lo que se cobra aparte va en un
+ *   grupo `counted: true` (con contador) para poder pedir varias unidades.
  */
 
 type RawCategory = Omit<MenuCategory, "items"> & {
   items: Omit<MenuItem, "id">[];
 };
 
-const acompanantes: OptionGroup = {
+// Acompañante que ya viene con el plato: se elige uno.
+const acompanante: OptionGroup = {
   id: "acompanante",
-  title: "Acompañantes",
+  title: "Acompañante",
   required: true,
   options: [
     { id: "yuca", name: "Yuca" },
     { id: "patacones", name: "Patacones" },
     { id: "tajaditas", name: "Tajaditas" },
+  ],
+};
+
+// Lo que se paga aparte va con contador: el cliente pide las unidades que quiera de cada uno.
+const adicionales: OptionGroup = {
+  id: "adicionales",
+  title: "Adicionales",
+  counted: true,
+  options: [
     { id: "papas-fritas", name: "Papas fritas", price: 3000 },
     { id: "cayeye", name: "Cayeye", price: 3000 },
   ],
@@ -37,7 +48,7 @@ const raw: RawCategory[] = [
       { name: "Huevo perico", price: 9000 },
       { name: "Huevo ranchero", price: 10000 },
     ],
-    options: [acompanantes],
+    options: [acompanante, adicionales],
   },
   {
     id: "ejecutivos",
@@ -70,7 +81,7 @@ const raw: RawCategory[] = [
       { name: "Carne asada", price: 16000 },
       { name: "Punta gorda", price: 24000 },
     ],
-    options: [acompanantes],
+    options: [acompanante, adicionales],
   },
   {
     id: "cayeye",
@@ -82,7 +93,9 @@ const raw: RawCategory[] = [
       {
         id: "adicionales",
         title: "Adicionales",
-        multiple: true,
+        // Con contador: se puede pedir más de una unidad (ej. 2 de chorizo).
+        // Para sumar más adicionales (queso, chicharrón...) agrega otra línea con su precio.
+        counted: true,
         options: [{ id: "chorizo", name: "Chorizo", price: 4000 }],
       },
     ],

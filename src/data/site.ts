@@ -12,10 +12,10 @@ export const site: SiteSettings = {
   heroImage: undefined, // ej. "/portada.jpg"
 
   instagram: "restlamona22",
-  // PENDIENTE: número de WhatsApp con indicativo, solo dígitos. Ej: "573001234567".
-  // Es donde llegan los pedidos del carrito. Mientras esté vacío, el carrito solo permite
-  // copiar el pedido, y "Escribir por WhatsApp" abre el chat de Instagram.
-  whatsapp: "",
+  // WhatsApp donde llegan los pedidos del carrito: indicativo + número, solo dígitos.
+  // Si lo dejas vacío, el carrito solo permite copiar el pedido, y "Escribir por WhatsApp"
+  // abre el chat de Instagram.
+  whatsapp: "573019629614",
   chatMessage: "Hola, quisiera hacer una consulta.",
   phone: "",
   address: "",

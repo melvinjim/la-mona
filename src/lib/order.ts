@@ -5,9 +5,18 @@ export type ChatLink = {
   channel: "whatsapp" | "instagram";
 };
 
-/** Solo los dígitos del número de WhatsApp configurado ("" si no hay). */
+/**
+ * Solo los dígitos de un número de WhatsApp. Un celular colombiano escrito sin indicativo
+ * (10 dígitos, ej. 3019629614) se completa con el 57.
+ */
+export function normalizeWhatsapp(value: string | undefined): string {
+  const digits = (value ?? "").replace(/\D/g, "");
+  return /^3\d{9}$/.test(digits) ? `57${digits}` : digits;
+}
+
+/** Número de WhatsApp configurado, listo para wa.me ("" si no hay). */
 export function whatsappDigits(site: Pick<SiteSettings, "whatsapp">): string {
-  return (site.whatsapp ?? "").replace(/\D/g, "");
+  return normalizeWhatsapp(site.whatsapp);
 }
 
 /** Chat directo (sin pedido): WhatsApp si hay número configurado; si no, el chat de Instagram. */

@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { fileContent, getMenu, getSite } from "@/lib/content";
+import { sanitizeIncludes, sanitizeOptionGroups } from "@/lib/content-schema";
+import { normalizeWhatsapp } from "@/lib/order";
 import { slug, uniqueId } from "@/lib/slug";
 import type { ContentKey } from "@/lib/supabase/config";
 import { serverClient } from "@/lib/supabase/server-client";
@@ -168,11 +170,12 @@ export async function saveSite(
     return fail(form, "El horario va en formato de 24 horas, por ejemplo 05:00 y 22:30.");
   }
 
-  const whatsapp = text(form, "whatsapp").replace(/[^\d]/g, "");
+  // Un celular colombiano escrito sin indicativo (3019629614) se guarda con el 57 delante.
+  const whatsapp = normalizeWhatsapp(text(form, "whatsapp"));
   if (whatsapp && whatsapp.length < 10) {
     return fail(
       form,
-      "El WhatsApp va con indicativo de país y solo dígitos, por ejemplo 573001234567.",
+      "El WhatsApp debe tener al menos 10 dígitos, por ejemplo 3019629614 o 573019629614.",
     );
   }
 
@@ -221,7 +224,10 @@ export async function saveSite(
 /* Menú                                                                */
 /* ------------------------------------------------------------------ */
 
-/** Lee `options` e `includes` del cuadro de texto avanzado. */
+/**
+ * Lee `options` e `includes` que manda el editor de opciones (un solo campo con JSON).
+ * Todo se valida: lo que no tenga la forma correcta se descarta en vez de romper el sitio.
+ */
 function readAdvanced(
   raw: string,
 ): { options?: OptionGroup[]; includes?: IncludedList } | string {
@@ -232,41 +238,33 @@ function readAdvanced(
   try {
     parsed = JSON.parse(trimmed);
   } catch {
-    return "Las opciones avanzadas no son un JSON válido. Revisa comas y llaves.";
+    return "No se pudieron leer las opciones al pedir. Recarga la página e inténtalo de nuevo.";
   }
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    return 'Las opciones avanzadas deben ser un objeto, por ejemplo {"options": []}.';
+    return "No se pudieron leer las opciones al pedir. Recarga la página e inténtalo de nuevo.";
   }
 
   const { options, includes } = parsed as Record<string, unknown>;
-
-  if (options !== undefined && !Array.isArray(options)) {
-    return '"options" debe ser una lista.';
-  }
-  if (
-    includes !== undefined &&
-    (typeof includes !== "object" ||
-      includes === null ||
-      !Array.isArray((includes as IncludedList).items))
-  ) {
-    return '"includes" debe tener un "title" y una lista "items".';
-  }
-
+  const groups = sanitizeOptionGroups(options);
   return {
-    options: options as OptionGroup[] | undefined,
-    includes: includes as IncludedList | undefined,
+    options: groups.length > 0 ? groups : undefined,
+    includes: sanitizeIncludes(includes),
   };
 }
 
+/** Mover un plato una posición: `row` es su fila en el formulario. */
+type ItemMove = { row: number; delta: -1 | 1 };
+
 /**
  * Arma una categoría con lo que venga del formulario. Devuelve un texto si algo está mal.
- * `skipRow` descarta esa fila de platos: es como se elimina uno.
+ * `skipRow` descarta esa fila de platos (así se elimina uno) y `move` sube o baja un plato.
  */
 function readCategory(
   form: FormData,
   takenCategoryIds: Set<string>,
   takenItemIds: Set<string>,
   skipRow = -1,
+  move?: ItemMove,
 ): MenuCategory | string {
   const name = text(form, "name");
   if (!name) return "La categoría necesita un nombre.";
@@ -286,6 +284,7 @@ function readCategory(
   const layout = text(form, "layout") === "chips" ? "chips" : "list";
   const count = Number(text(form, "itemCount")) || 0;
   const items: MenuItem[] = [];
+  const rows: number[] = []; // fila del formulario de cada plato de `items`
 
   for (let index = 0; index < count; index += 1) {
     if (index === skipRow) continue;
@@ -308,6 +307,15 @@ function readCategory(
       image: optional(form, `item-${index}-image`),
       ...(available ? {} : { available: false }),
     });
+    rows.push(index);
+  }
+
+  if (move) {
+    const from = rows.indexOf(move.row);
+    const to = from + move.delta;
+    if (from !== -1 && to >= 0 && to < items.length) {
+      [items[from], items[to]] = [items[to], items[from]];
+    }
   }
 
   return {
@@ -361,7 +369,12 @@ export async function saveCategory(
     ? Number(intent.slice("remove-item-".length))
     : -1;
 
-  const category = readCategory(form, takenCategoryIds, takenItemIds, removal);
+  const itemMove = /^item-(up|down)-(\d+)$/.exec(intent);
+  const move: ItemMove | undefined = itemMove
+    ? { row: Number(itemMove[2]), delta: itemMove[1] === "up" ? -1 : 1 }
+    : undefined;
+
+  const category = readCategory(form, takenCategoryIds, takenItemIds, removal, move);
   if (typeof category === "string") return fail(form, category);
 
   if (intent === "add-item") {
@@ -385,7 +398,7 @@ export async function saveCategory(
 
   if (intent === "add-item") return { ok: "Plato agregado. Ponle nombre y precio." };
   if (removal >= 0) return { ok: "Plato eliminado." };
-  if (intent === "move-up" || intent === "move-down") return { ok: "Orden actualizado." };
+  if (move || intent === "move-up" || intent === "move-down") return { ok: "Orden actualizado." };
   return { ok: `"${category.name}" se guardó y ya está publicado.` };
 }
 

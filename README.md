@@ -97,11 +97,13 @@ Domicilio (San Isidro): $5.000
 
 ## Domicilios: precios y barrios
 
-- **Precios de domicilio.** Cada producto cuesta `deliverySurcharge` pesos más que en el menú del local (hoy
-  **$1.000**). Se suma al precio de cada plato y al precio único de una categoría (los batidos); los adicionales
-  (papas, cayeye…) no cambian. En `/menu` siempre se ven los precios del local. Se cambia en el panel
-  (pestaña *Domicilios*) o en `src/data/site.ts`. Quien elige *Recoger en el local* ve los mismos precios de esta
-  página, pero sin domicilio.
+- **Precios de domicilio.** `src/data/menu.ts` y `/menu` tienen los **precios del local**. En `/domicilios` cada
+  producto cuesta `deliverySurcharge` pesos más (hoy **$1.000**, "Llevar +$1.000" en la carta). El recargo se suma
+  al precio de cada plato y al precio único de una categoría (los batidos); las opciones (papas, cayeye…) no
+  cambian. **Cada categoría puede quedar sin recargo** (`noDeliverySurcharge: true`; en el panel, el interruptor
+  *Cobrar el recargo de domicilio en esta categoría*): hoy no lo llevan Cayeye, Fritos, Adicionales, Jugos sellados
+  y Gaseosas. El monto se cambia en el panel (pestaña *Domicilios*). Quien elige *Recoger en el local* ve los
+  mismos precios de esta página, pero sin domicilio.
 - **Los barrios viven en la base de datos**, en la tabla `delivery_zones` de Supabase (nombre y valor), no en el
   código. Se editan en el panel, pestaña *Domicilios*, con una línea por barrio: `San Isidro - 5000` (se puede
   pegar la lista completa; también sirven los dos puntos, la coma o pegar desde Excel; lo que se quita de la lista
@@ -230,6 +232,13 @@ panel muestra las instrucciones de configuración.
 5. Entra a `/admin`, inicia sesión y pulsa **Copiar el menú actual a Supabase**. A partir de ahí el menú se
    edita desde el panel y los archivos de `src/data` quedan solo como respaldo.
 
+### Volver a cargar el menú del código
+
+El menú que se ve es el de Supabase (lo editado en el panel). Si se actualiza `src/data/menu.ts` y se quiere cargar
+completo, en el panel, pestaña *Menú*, abajo del todo: **Avanzado → Reemplazar el menú por el del código**. Reemplaza
+todo el menú (platos, precios, opciones y fotos de platos) y pide confirmación; los barrios y los ajustes no se tocan.
+El menú del código también es el respaldo que se muestra si Supabase no responde.
+
 ### Código QR de las mesas
 
 En el panel, pestaña **Código QR**: muestra una tarjeta lista para imprimir (logo, "Escanea y mira nuestro menú" y
@@ -256,6 +265,20 @@ imprima aún.
   varias, o **con cantidad** (botones + y −, para pedir 2 de queso o 10 de papas). Todo lo que se cobra
   aparte conviene dejarlo "con cantidad". El editor avisa si un grupo tiene precios y no lleva cantidad.
 - El WhatsApp se puede escribir con o sin el 57 de Colombia (`3019629614` o `573019629614`).
+
+## Mantener activo el proyecto de Supabase
+
+Los proyectos del plan gratuito de Supabase se **pausan tras una semana sin actividad** (y, mientras está pausado,
+el sitio muestra el menú de `src/data/menu.ts`). Para que no pase, `vercel.json` programa una llamada **todos los
+días** (13:00 UTC, 8:00 a. m. en Colombia) a `/api/keep-alive`, que hace una lectura mínima de la base de datos
+(`src/app/api/keep-alive/route.ts`).
+
+- Se activa sola al desplegar en Vercel; se ve en *Settings → Cron Jobs* del proyecto. Solo corre en producción.
+- Para probarla a mano: abre `tu-sitio.com/api/keep-alive`; debe responder `{"ok":true,...}`.
+- Opcional, para que solo Vercel pueda llamarla: crea en Vercel la variable de entorno `CRON_SECRET` con un texto
+  largo al azar. Vercel la envía sola en cada llamada programada y la dirección rechaza al que no la traiga.
+- Si algún día se pasa al plan Pro de Supabase, deja de ser necesaria (no estorba).
+- Si Supabase llega a pausarse: *Dashboard → Restore project*; no se pierden datos.
 
 ## Comandos
 

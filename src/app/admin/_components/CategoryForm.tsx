@@ -125,6 +125,17 @@ export function CategoryForm({ category, index, total }: Props) {
               />
             </div>
             <div className="sm:col-span-2">
+              <Toggle
+                name="chargeDelivery"
+                label="Cobrar el recargo de domicilio en esta categoría"
+                defaultChecked={old.flag("chargeDelivery", category.noDeliverySurcharge !== true)}
+              />
+              <p className="mt-1 text-xs text-ink-soft">
+                A domicilio cada producto cuesta un poco más que en el local (se cambia en la
+                pestaña Domicilios). Desmárcalo si esta categoría cuesta igual en los dos.
+              </p>
+            </div>
+            <div className="sm:col-span-2">
               <ImageField
                 name="image"
                 label="Foto de la categoría"

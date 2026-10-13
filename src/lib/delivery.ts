@@ -2,8 +2,9 @@ import type { MenuCategory } from "./types";
 
 /**
  * Menú de domicilios: cada producto cuesta `surcharge` pesos más que en el menú del local.
- * Se aplica al precio de cada plato y al precio único de la categoría (ej. los batidos).
- * Lo que no tiene precio se queda sin precio. Los adicionales no cambian.
+ * Se aplica al precio de cada plato y al precio único de la categoría (ej. los batidos);
+ * lo que no tiene precio se queda sin precio. Las categorías con `noDeliverySurcharge`
+ * (fritos, jugos sellados...) y las opciones (adicionales) no cambian.
  */
 export function withDeliveryPrices(
   menu: MenuCategory[],
@@ -14,9 +15,13 @@ export function withDeliveryPrices(
 
   const raise = (price: number | undefined) => (price === undefined ? undefined : price + extra);
 
-  return menu.map((category) => ({
-    ...category,
-    price: raise(category.price),
-    items: category.items.map((item) => ({ ...item, price: raise(item.price) })),
-  }));
+  return menu.map((category) =>
+    category.noDeliverySurcharge
+      ? category
+      : {
+          ...category,
+          price: raise(category.price),
+          items: category.items.map((item) => ({ ...item, price: raise(item.price) })),
+        },
+  );
 }

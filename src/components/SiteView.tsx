@@ -73,6 +73,13 @@ export async function SiteView({ mode }: { mode: SiteMode }) {
             <MenuSection key={category.id} category={category} ordering={ordering} />
           ))}
         </MenuShell>
+
+        {!ordering && (
+          <p className="mx-auto mt-8 max-w-6xl px-4 text-sm text-ink-soft sm:px-8">
+            Se sugiere un servicio voluntario del 10%. El cliente podrá aceptar, modificar o
+            rechazar este valor.
+          </p>
+        )}
       </main>
 
       <Footer site={site} chat={chat} mode={mode} />

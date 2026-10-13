@@ -145,6 +145,7 @@ function sanitizeCategory(raw: unknown): MenuCategory | null {
     image: filled(raw.image),
     price: money(raw.price),
     layout: raw.layout === "chips" ? "chips" : undefined,
+    noDeliverySurcharge: raw.noDeliverySurcharge === true ? true : undefined,
     items: raw.items.flatMap((item) => sanitizeItem(item) ?? []),
     options: options.length > 0 ? options : undefined,
     includes: sanitizeIncludes(raw.includes),

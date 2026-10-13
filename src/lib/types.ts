@@ -67,6 +67,11 @@ export type MenuCategory = {
   price?: number;
   /** "chips" muestra los items como etiquetas, sin precio individual. */
   layout?: "list" | "chips";
+  /**
+   * `true`: en la página de domicilios esta categoría cuesta lo mismo que en el local (sin el
+   * recargo por producto). Por defecto el recargo se aplica.
+   */
+  noDeliverySurcharge?: boolean;
   items: MenuItem[];
   /** Opciones que se eligen al pedir cualquier plato de la categoría. */
   options?: OptionGroup[];

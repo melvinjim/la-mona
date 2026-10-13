@@ -151,6 +151,14 @@ export async function importFromFiles(): Promise<FormState> {
   return { ok: "Listo: el menú y los datos del sitio quedaron guardados en Supabase." };
 }
 
+/** Reemplaza el menú guardado por el del código (src/data/menu.ts). Pide sesión como todo lo demás. */
+export async function restoreMenu(): Promise<FormState> {
+  const error = await save("menu", fileContent.menu);
+  return error
+    ? { error }
+    : { ok: "Listo: el menú del código quedó cargado y ya está publicado." };
+}
+
 /* ------------------------------------------------------------------ */
 /* Ajustes del sitio                                                   */
 /* ------------------------------------------------------------------ */
@@ -406,6 +414,8 @@ function readCategory(
     image: optional(form, "image"),
     price: money(form, "price"),
     layout,
+    // Sin marcar "Cobrar recargo en domicilios" la categoría cuesta igual en los dos menús.
+    noDeliverySurcharge: checked(form, "chargeDelivery") ? undefined : true,
     items,
     options: advanced.options,
     includes: advanced.includes,

@@ -3,6 +3,7 @@ import { getContentSources, getMenu } from "@/lib/content";
 import { CategoryForm } from "../_components/CategoryForm";
 import { ImportBanner } from "../_components/ImportBanner";
 import { NewCategoryForm } from "../_components/NewCategoryForm";
+import { RestoreMenu } from "../_components/RestoreMenu";
 
 export const metadata: Metadata = {
   title: "Menú",
@@ -37,6 +38,8 @@ export default async function MenuAdminPage() {
       </div>
 
       <NewCategoryForm />
+
+      <RestoreMenu />
     </div>
   );
 }

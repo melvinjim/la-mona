@@ -54,7 +54,7 @@ leche, adicionales), una nota y la cantidad. Siempre se abre, también en gaseos
 cantidad y nota antes de agregar.
 El carrito solo existe en `/domicilios` (en `/menu` no hay botones para pedir). En **Mi pedido** el cliente
 escribe su nombre y elige **Domicilio** o **Recoger en el local**. A domicilio escribe además su **barrio** (se valida
-y se suma el domicilio) y la dirección; para recoger no se piden dirección ni barrio y no se cobra domicilio. Luego
+y se suma el domicilio) y la dirección (son dos campos aparte); para recoger no se piden dirección ni barrio y no se cobra domicilio. Luego
 el medio de pago si quiere y comentarios, y al pulsar **Enviar pedido por WhatsApp** se abre el chat del restaurante
 con el mensaje ya escrito (el de abajo es el de un domicilio):
 
@@ -111,14 +111,18 @@ Domicilio (San Isidro): $5.000
   Import data from CSV* (columnas `name` y `fee`).
 - **Crear la tabla (una sola vez):** el SQL está en `supabase/schema.sql`, sección *Barrios de domicilio*. Si todavía
   no existe, el panel lo muestra listo para copiar y el sitio funciona igual, sin pedir el barrio.
-- **El cliente puede escribir el barrio "como sea".** Se compara por cómo suena en español, no por cómo se escribe:
-  `san isidro`, `sanisidro`, `SANSISDRO`, `SANISISdro`, `Barrio San Isidro`, con tildes o sin ellas, con b/v, s/z/c o h
-  de más o de menos. Al reconocerlo, el campo queda con el nombre oficial y se muestra el valor del domicilio.
-  Si hay dudas (`isidro` puede ser *San Isidro* o *San Isidro II*) se ofrecen botones para tocar el correcto, y si
-  el barrio no existe no deja enviar el pedido.
+- **El barrio va aparte de la dirección y se valida.** El cliente lo escribe "como sea" y toca **Validar** (o Enter).
+  Se compara por cómo suena en español, no por cómo se escribe: `san isidro`, `sanisidro`, `SANSISDRO`,
+  `SANISISdro`, `Barrio San Isidro`, con tildes o sin ellas, con b/v, s/z/c o h de más o de menos. Al reconocerlo,
+  el campo queda con el nombre oficial, el botón pasa a *Validado* y recién ahí se suma el valor del domicilio al
+  total. Si hay dudas (`isidro` puede ser *San Isidro* o *San Isidro II*) se ofrecen botones para tocar el correcto,
+  y si el barrio no existe no deja enviar. Si el cliente cambia el barrio, la validación se quita. Si toca *Enviar*
+  sin haber validado, se valida en ese mismo toque, así que el mensaje de WhatsApp siempre llega con el domicilio.
 - **Totales:** *Total factura* (productos), *Domicilio* (valor del barrio) y *Total a pagar*; el mensaje de WhatsApp
-  trae el mismo desglose. Para recoger solo hay un total.
-- Mientras la tabla esté vacía (o no exista), el carrito no pide el barrio ni suma domicilio.
+  trae el mismo desglose (`*Barrio:*` y `*Dirección:*` por separado). Para recoger solo hay un total.
+- Mientras la tabla esté vacía (o no exista), el barrio se pide igual pero no se puede validar: el mensaje sale con
+  `Domicilio: por confirmar` y `Total a pagar (sin domicilio)`, y el restaurante cobra el domicilio por chat. Para que
+  el domicilio se sume solo hay que crear la tabla y cargar los barrios.
 - Código: `src/lib/barrios.ts` (reconocimiento, lectura de la lista y sincronización con la tabla),
   `src/lib/delivery.ts` (recargo), `src/components/cart/BarrioField.tsx` (el campo) y
   `src/app/admin/_components/DeliveryForms.tsx` (el panel).

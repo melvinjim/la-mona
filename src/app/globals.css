@@ -156,8 +156,17 @@ body {
 }
 
 :focus-visible {
-  outline: 3px solid var(--color-ink);
-  outline-offset: 3px;
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+}
+
+/* En los campos de texto basta con el color del borde; la ventana en sí no lleva marco. */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+dialog:focus,
+dialog:focus-visible {
+  outline: none;
 }
 
 .on-dark :focus-visible,

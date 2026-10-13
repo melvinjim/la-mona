@@ -107,8 +107,10 @@ export function buildOrderMessage({
     `*Tipo de servicio:* ${customer.delivery === "domicilio" ? "Domicilio" : "Recoger en el local"}`,
     `*Nombre:* ${oneLine(customer.name)}`,
   ];
-  if (customer.delivery === "domicilio") {
-    if (shipping) parts.push(`*Barrio:* ${oneLine(shipping.zone)}`);
+  const delivering = customer.delivery === "domicilio";
+  if (delivering) {
+    const barrio = oneLine(shipping?.zone ?? customer.barrio);
+    if (barrio) parts.push(`*Barrio:* ${barrio}`);
     parts.push(`*Dirección:* ${oneLine(customer.address)}`);
   }
 
@@ -130,11 +132,15 @@ export function buildOrderMessage({
 
   parts.push("", "*💲 Pago*");
   if (customer.payment) parts.push(`Medio de pago: ${customer.payment}`);
-  if (customer.delivery === "domicilio" && shipping) {
+  // Sin barrio validado (el restaurante aún no cargó sus barrios) el domicilio se confirma por chat.
+  const pendingFee = delivering && !shipping;
+  if (delivering && shipping) {
     parts.push(`Total factura: ${formatCOP(subtotal)}`);
     parts.push(`Domicilio (${oneLine(shipping.zone)}): ${formatCOP(fee)}`);
+  } else if (pendingFee) {
+    parts.push("Domicilio: por confirmar");
   }
-  parts.push(`*Total a pagar: ${formatCOP(total)}*`);
+  parts.push(`*Total a pagar${pendingFee ? " (sin domicilio)" : ""}: ${formatCOP(total)}*`);
 
   return parts.join("\n");
 }

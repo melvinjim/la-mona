@@ -1,6 +1,6 @@
 "use client";
 
-import { Maximize2, X } from "lucide-react";
+import { X } from "lucide-react";
 import Image from "next/image";
 import { useContext, useState, type ReactNode } from "react";
 import { buttonClass } from "./button-styles";
@@ -24,13 +24,11 @@ type Props = {
   className?: string;
   /** Lo que se ve antes de ampliar: normalmente la miniatura. */
   children: ReactNode;
-  /** "Ver completa": texto junto al ícono de ampliar (para fotos grandes). */
-  hint?: string;
 };
 
 /**
- * Foto que se amplía al tocarla: se ve el plato completo, sin recortes, con su nombre y precio.
- * Se cierra con la X, tocando fuera o con la tecla Escape.
+ * Foto que se amplía al tocarla: sube desde abajo como una tarjeta y se ve el plato completo, sin
+ * recortes, con su nombre y precio. Se cierra con la X, tocando fuera o con la tecla Escape.
  */
 export function ImageViewer({
   src,
@@ -41,7 +39,6 @@ export function ImageViewer({
   itemId,
   className = "",
   children,
-  hint,
 }: Props) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
@@ -57,16 +54,9 @@ export function ImageViewer({
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-label={`Ver la foto de ${name} en grande`}
-        className={`group ${className}`}
+        className={className}
       >
         {children}
-        <span
-          aria-hidden="true"
-          className="absolute bottom-1 right-1 inline-flex items-center gap-1 rounded-full bg-white/90 p-1 text-[0.7rem] font-bold text-ink shadow-sm ring-1 ring-black/5 transition group-hover:bg-white"
-        >
-          <Maximize2 className="size-3.5" />
-          {hint && <span className="pr-1">{hint}</span>}
-        </span>
       </button>
 
       <Modal open={open} onClose={close} label={`Foto de ${name}`} variant="photo">

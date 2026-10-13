@@ -116,7 +116,6 @@ function ProductForm({
             price={item.price}
             description={item.description}
             className="relative block aspect-[16/9] w-full cursor-zoom-in bg-sand"
-            hint="Ver completa"
           >
             <Image
               src={item.image}
@@ -186,7 +185,7 @@ function ProductForm({
                       return (
                         <div
                           key={option.id}
-                          className={`flex items-center gap-3 rounded-2xl border-2 bg-white py-2 pl-4 pr-2 transition ${count > 0 ? "border-ink bg-brand-50" : "border-line"}`}
+                          className={`flex items-center gap-3 rounded-2xl border-2 bg-white py-2 pl-4 pr-2 transition ${count > 0 ? "border-brand-500 bg-brand-50" : "border-line"}`}
                         >
                           <div className="min-w-0 flex-1">
                             <p className="text-base font-semibold">{option.name}</p>
@@ -212,14 +211,14 @@ function ProductForm({
                   {!group.counted && group.options.map((option) => (
                     <label
                       key={option.id}
-                      className="flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-line bg-white px-4 py-3 transition hover:border-ink/40 has-[:checked]:border-ink has-[:checked]:bg-brand-50 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ink"
+                      className="flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-line bg-white px-4 py-3 transition hover:border-brand-300 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand-500"
                     >
                       <input
                         type={group.multiple ? "checkbox" : "radio"}
                         name={`${formId}-${group.id}`}
                         checked={picked[group.id]?.includes(option.id) ?? false}
                         onChange={() => choose(group, option.id)}
-                        className="size-5 shrink-0 accent-ink"
+                        className="size-5 shrink-0 accent-brand-500"
                       />
                       <span className="text-base font-semibold">{option.name}</span>
                       {(option.price || group.options.some((o) => o.price)) && (
@@ -250,7 +249,7 @@ function ProductForm({
                   ? "Ej: bebida de mora, sin cebolla"
                   : "Ej: sin cebolla, bien asado"
               }
-              className="mt-2 w-full resize-none rounded-2xl border-2 border-line bg-white px-4 py-3 text-base outline-none transition placeholder:text-ink-soft/60 focus:border-ink"
+              className="mt-2 w-full resize-none rounded-2xl border-2 border-line bg-white px-4 py-3 text-base outline-none transition placeholder:text-ink-soft/60 focus:border-brand-500"
             />
           </label>
         </div>

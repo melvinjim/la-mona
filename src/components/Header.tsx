@@ -69,13 +69,13 @@ export function Header({ site, mode }: { site: SiteSettings; mode: SiteMode }) {
             </div>
           ) : (
             site.delivery && (
-              <Link
-                href="/domicilios"
-                className={buttonClass("dark", "md", "on-dark hidden sm:inline-flex")}
-              >
-                <Bike className="size-5" aria-hidden="true" />
-                Pedir a domicilio
-              </Link>
+              // En celular el botón grande de la portada ya cubre esto; el encabezado no da el ancho.
+              <div className="hidden sm:block">
+                <Link href="/domicilios" className={buttonClass("dark", "md", "on-dark whitespace-nowrap")}>
+                  <Bike className="size-5" aria-hidden="true" />
+                  Pedir a domicilio
+                </Link>
+              </div>
             )
           )}
         </div>

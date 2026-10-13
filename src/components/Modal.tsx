@@ -17,9 +17,9 @@ const variants = {
   /** Ventana centrada. */
   center:
     "anim-pop inset-0 m-auto h-fit max-h-[94dvh] w-[min(92vw,30rem)] rounded-[1.75rem]",
-  /** Ventana centrada y más ancha, para ver fotos grandes. */
+  /** Tarjeta que sube desde abajo en celular (como "sheet"); más ancha desde sm, para fotos grandes. */
   photo:
-    "anim-pop inset-0 m-auto h-fit max-h-[94dvh] w-[min(94vw,46rem)] rounded-[1.75rem]",
+    "anim-sheet inset-x-0 bottom-0 top-auto m-0 max-h-[92dvh] w-full rounded-t-[1.75rem] sm:inset-0 sm:m-auto sm:h-fit sm:max-w-2xl sm:rounded-[1.75rem]",
 } as const;
 
 type Props = {
@@ -52,6 +52,8 @@ export function Modal({ open, onClose, label, variant, children }: Props) {
         dialog.dataset.fallback = "";
         dialog.setAttribute("open", "");
       }
+      // El foco queda en la ventana y no en su primer botón: así no se dibuja un marco al abrir.
+      dialog.focus({ preventScroll: true });
     } else if (dialog.open) {
       try {
         dialog.close();
@@ -78,6 +80,7 @@ export function Modal({ open, onClose, label, variant, children }: Props) {
   return (
     <dialog
       ref={ref}
+      tabIndex={-1}
       aria-label={label}
       onClose={onClose}
       onClick={(event) => {

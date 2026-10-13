@@ -65,7 +65,7 @@ export function AddChip({ itemId, name }: { itemId: string; name: string }) {
           ? `Agregar otro: ${item.orderName} (llevas ${qty})`
           : `Agregar al pedido: ${item.orderName}`
       }
-      className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 py-1.5 pl-4 pr-1.5 text-[0.95rem] font-semibold transition hover:border-ink active:translate-y-px"
+      className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 py-1.5 pl-4 pr-1.5 text-[0.95rem] font-semibold transition hover:border-brand-400 active:translate-y-px"
     >
       {name}
       <span className="relative grid size-7 place-items-center rounded-full bg-brand-500 text-ink">

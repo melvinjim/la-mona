@@ -1,11 +1,12 @@
 "use client";
 
 import { Check, Copy, ShoppingBag, TriangleAlert, X } from "lucide-react";
-import { useId, useMemo, useState, type FormEvent } from "react";
-import { matchZone } from "@/lib/barrios";
+import { useId, useState, type FormEvent } from "react";
+import { matchZone, type ZoneMatch } from "@/lib/barrios";
 import { optionLabel, type ResolvedLine } from "@/lib/cart";
 import { formatCOP, formatTimeWithArticle } from "@/lib/format";
 import { customerStore } from "@/lib/local-store";
+import type { DeliveryZone } from "@/lib/types";
 import {
   buildOrderMessage,
   parseCustomer,
@@ -35,7 +36,7 @@ export function CartDrawer({
 }
 
 const inputClass =
-  "mt-1.5 h-12 w-full rounded-2xl border-2 bg-white px-4 text-base outline-none transition placeholder:text-ink-soft/60 focus:border-ink";
+  "mt-1.5 h-12 w-full rounded-2xl border-2 bg-white px-4 text-base outline-none transition placeholder:text-ink-soft/60 focus:border-brand-500";
 
 function FieldError({ id, children }: { id: string; children: string }) {
   return (
@@ -78,22 +79,53 @@ function CartPanel({ onClose }: { onClose: () => void }) {
 
   // Para recoger en el local no se piden dirección ni barrio y no se cobra domicilio.
   const delivering = customer.delivery === "domicilio";
+  const zones = checkout.zones;
+  const hasZones = zones.length > 0;
+
+  // Barrio validado: recién entonces el valor de su domicilio cuenta en el total.
+  const [validatedId, setValidatedId] = useState<string | null>(() => {
+    const saved = matchZone(parseCustomer(customerStore.getSnapshot()).barrio, checkout.zones);
+    return saved.status === "ok" && saved.exact ? saved.zone.id : null;
+  });
+  const [attempt, setAttempt] = useState<ZoneMatch | null>(null);
+  const validated = hasZones ? (zones.find((entry) => entry.id === validatedId) ?? null) : null;
+
+  const pickZone = (zone: DeliveryZone) => {
+    setValidatedId(zone.id);
+    setAttempt(null);
+    update({ barrio: zone.name });
+  };
+  /** Reconoce el barrio escrito. Devuelve el barrio si se entendió; si no, muestra opciones o el error. */
+  const validate = (): DeliveryZone | null => {
+    const result = matchZone(customer.barrio, zones);
+    if (result.status === "ok") {
+      pickZone(result.zone);
+      return result.zone;
+    }
+    setValidatedId(null);
+    setAttempt(result);
+    return null;
+  };
+  const changeBarrio = (barrio: string) => {
+    update({ barrio });
+    setValidatedId(null);
+    setAttempt(null);
+  };
+
   const nameInvalid = customer.name.trim().length < 2;
   const addressInvalid = delivering && customer.address.trim().length < 5;
+  const barrioMissing = delivering && customer.barrio.trim().length < 3;
   const canSend = count > 0;
-
-  // Barrio: si el restaurante cargó su lista, hay que reconocerlo para cobrar el domicilio.
-  const zones = checkout.zones;
-  const needsZone = delivering && zones.length > 0;
-  const match = useMemo(() => matchZone(customer.barrio, zones), [customer.barrio, zones]);
-  const zone = match.status === "ok" ? match.zone : null;
-  const barrioInvalid = needsZone && !zone;
-  const shipping = needsZone && zone ? { zone: zone.name, fee: zone.fee } : null;
+  const shipping = delivering && validated ? { zone: validated.name, fee: validated.fee } : null;
   const grandTotal = total + (shipping?.fee ?? 0);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!canSend) return;
+
+    // Si el cliente no tocó "Validar", se valida el barrio aquí mismo antes de enviar.
+    const zone = validated ?? (delivering && hasZones && !barrioMissing ? validate() : null);
+    const barrioInvalid = delivering && (barrioMissing || (hasZones && !zone));
     if (nameInvalid || barrioInvalid || addressInvalid) {
       setTried(true);
       const first = nameInvalid ? "name" : barrioInvalid ? "barrio" : "address";
@@ -101,12 +133,13 @@ function CartPanel({ onClose }: { onClose: () => void }) {
       return;
     }
 
-    customerStore.set(JSON.stringify(customer));
+    const order: Customer = { ...customer, barrio: zone ? zone.name : customer.barrio };
+    customerStore.set(JSON.stringify(order));
     const text = buildOrderMessage({
       lines,
-      customer,
+      customer: order,
       comments,
-      shipping,
+      shipping: delivering && zone ? { zone: zone.name, fee: zone.fee } : null,
       timeZone: checkout.timeZone,
     });
 
@@ -277,7 +310,7 @@ function CartPanel({ onClose }: { onClose: () => void }) {
                   {deliveryOptions.map(({ value, label }) => (
                     <label
                       key={value}
-                      className="flex min-h-12 cursor-pointer items-center justify-center rounded-2xl border-2 border-line bg-white px-3 text-center text-[0.95rem] font-bold transition has-[:checked]:border-ink has-[:checked]:bg-ink has-[:checked]:text-white has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ink"
+                      className="flex min-h-12 cursor-pointer items-center justify-center rounded-2xl border-2 border-line bg-white px-3 text-center text-[0.95rem] font-bold transition has-[:checked]:border-brand-500 has-[:checked]:bg-brand-500 has-[:checked]:text-ink has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand-500"
                     >
                       <input
                         type="radio"
@@ -298,14 +331,18 @@ function CartPanel({ onClose }: { onClose: () => void }) {
                 )}
               </fieldset>
 
-              {needsZone && (
+              {delivering && (
                 <div className="mt-4">
                   <BarrioField
                     id={`${ids}-barrio`}
                     value={customer.barrio}
-                    onChange={(barrio) => update({ barrio })}
-                    match={match}
+                    onChange={changeBarrio}
+                    onValidate={() => validate()}
+                    onPick={pickZone}
+                    hasZones={hasZones}
                     zones={zones}
+                    validated={validated}
+                    attempt={attempt}
                     showError={tried}
                     inputClass={inputClass}
                   />
@@ -323,7 +360,7 @@ function CartPanel({ onClose }: { onClose: () => void }) {
                     onChange={(event) => update({ address: event.target.value })}
                     autoComplete="street-address"
                     maxLength={200}
-                    placeholder={needsZone ? "Calle, número, apartamento" : "Calle, número, barrio, apartamento"}
+                    placeholder="Calle, número, apartamento"
                     aria-invalid={tried && addressInvalid}
                     aria-describedby={tried && addressInvalid ? `${ids}-address-error` : undefined}
                     className={`${inputClass} ${tried && addressInvalid ? "border-red-600" : "border-line"}`}
@@ -353,8 +390,8 @@ function CartPanel({ onClose }: { onClose: () => void }) {
                           onClick={() => update({ payment: selected ? "" : payment })}
                           className={`h-11 rounded-full border-2 px-4 text-[0.95rem] font-bold transition ${
                             selected
-                              ? "border-ink bg-ink text-white"
-                              : "border-line bg-white hover:border-ink/40"
+                              ? "border-brand-500 bg-brand-500 text-ink"
+                              : "border-line bg-white hover:border-brand-300"
                           }`}
                         >
                           {payment}
@@ -426,7 +463,7 @@ function CartPanel({ onClose }: { onClose: () => void }) {
             )}
 
             <dl className="space-y-1.5">
-              {needsZone && (
+              {delivering && hasZones && (
                 <>
                   <div className="flex items-baseline justify-between gap-3">
                     <dt className="text-sm font-bold uppercase tracking-[0.16em] text-ink-soft">
@@ -436,25 +473,25 @@ function CartPanel({ onClose }: { onClose: () => void }) {
                   </div>
                   <div className="flex items-baseline justify-between gap-3">
                     <dt className="text-sm font-bold uppercase tracking-[0.16em] text-ink-soft">
-                      Domicilio{zone ? ` · ${zone.name}` : ""}
+                      Domicilio{validated ? ` · ${validated.name}` : ""}
                     </dt>
                     <dd
                       className={
-                        zone
+                        validated
                           ? "font-display text-2xl font-bold leading-none"
                           : "text-sm font-semibold text-amber-800"
                       }
                     >
-                      {zone ? formatCOP(zone.fee) : "Falta el barrio"}
+                      {validated ? formatCOP(validated.fee) : "Falta validar el barrio"}
                     </dd>
                   </div>
                 </>
               )}
               <div
-                className={`flex items-baseline justify-between gap-3 ${needsZone ? "border-t border-line pt-2" : ""}`}
+                className={`flex items-baseline justify-between gap-3 ${delivering && hasZones ? "border-t border-line pt-2" : ""}`}
               >
                 <dt className="text-sm font-bold uppercase tracking-[0.16em] text-ink-soft">
-                  {needsZone
+                  {delivering && hasZones
                     ? "Total a pagar"
                     : `Total · ${count} ${count === 1 ? "producto" : "productos"}`}
                 </dt>
@@ -463,6 +500,11 @@ function CartPanel({ onClose }: { onClose: () => void }) {
                 </dd>
               </div>
             </dl>
+            {delivering && !hasZones && (
+              <p className="mt-1.5 text-xs font-semibold text-amber-800">
+                Más el domicilio, que te confirmamos por WhatsApp.
+              </p>
+            )}
 
             <button
               type="submit"

@@ -29,7 +29,7 @@ type Props<T extends string> = {
 };
 
 const cardBase =
-  "relative flex cursor-pointer rounded-xl border-2 border-line bg-white transition hover:border-ink/40 has-[:checked]:border-ink has-[:checked]:bg-brand-50 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ink";
+  "relative flex cursor-pointer rounded-xl border-2 border-line bg-white transition hover:border-brand-300 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand-500";
 
 /**
  * Elegir una opción tocándola, en vez de abrir una lista desplegable. Son botones de radio
@@ -81,7 +81,7 @@ export function ChoiceGrid<T extends string>({
               <>
                 <span
                   aria-hidden="true"
-                  className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border-2 border-ink/40 bg-white after:size-2.5 after:rounded-full after:bg-ink after:opacity-0 after:content-[''] peer-checked:border-ink peer-checked:after:opacity-100"
+                  className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border-2 border-brand-500/50 bg-white after:size-2.5 after:rounded-full after:bg-brand-600 after:opacity-0 after:content-[''] peer-checked:border-brand-600 peer-checked:after:opacity-100"
                 />
                 <span className="min-w-0">
                   <span className="block text-[0.95rem] font-bold leading-snug">{choice.label}</span>

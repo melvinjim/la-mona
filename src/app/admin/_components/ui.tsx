@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 /* Estilos compartidos del panel. Mismos colores del sitio, pero más sobrio y compacto. */
 
 export const inputClass =
-  "w-full rounded-xl border-2 border-line bg-white px-3 py-2.5 text-base outline-none transition placeholder:text-ink-soft/50 focus:border-ink";
+  "w-full rounded-xl border-2 border-line bg-white px-3 py-2.5 text-base outline-none transition placeholder:text-ink-soft/50 focus:border-brand-500";
 
 export const labelClass =
   "block text-xs font-bold uppercase tracking-[0.12em] text-ink-soft";
@@ -36,12 +36,12 @@ export function Toggle({
   defaultChecked?: boolean;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2.5 rounded-xl border-2 border-line bg-white px-3 py-2.5 has-[:checked]:border-ink has-[:checked]:bg-brand-50">
+    <label className="flex cursor-pointer items-center gap-2.5 rounded-xl border-2 border-line bg-white px-3 py-2.5 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50">
       <input
         type="checkbox"
         name={name}
         defaultChecked={defaultChecked}
-        className="size-5 shrink-0 accent-ink"
+        className="size-5 shrink-0 accent-brand-500"
       />
       <span className="text-[0.95rem] font-semibold">{label}</span>
     </label>

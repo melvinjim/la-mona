@@ -17,7 +17,7 @@ type Props = {
 };
 
 const button =
-  "grid size-11 shrink-0 place-items-center rounded-full border-2 border-line bg-white transition hover:border-ink disabled:opacity-35";
+  "grid size-11 shrink-0 place-items-center rounded-full border-2 border-line bg-white transition hover:border-brand-400 disabled:opacity-35";
 
 /** Precio que se puede escribir o subir y bajar con los botones (de a $500 por defecto). */
 export function PriceField({

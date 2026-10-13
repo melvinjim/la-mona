@@ -87,7 +87,7 @@ export function ImageField({ name, label, hint, defaultValue = "" }: Props) {
         <div className="flex min-w-0 flex-1 flex-wrap gap-2">
           <label
             htmlFor={inputId}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-full border-2 border-line px-4 py-2 text-sm font-bold transition hover:border-ink"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-full border-2 border-line px-4 py-2 text-sm font-bold transition hover:border-brand-400"
           >
             {busy ? (
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -113,7 +113,7 @@ export function ImageField({ name, label, hint, defaultValue = "" }: Props) {
             <button
               type="button"
               onClick={() => setUrl("")}
-              className="inline-flex items-center gap-1.5 rounded-full border-2 border-line px-3.5 py-2 text-sm font-bold text-ink-soft transition hover:border-ink hover:text-ink"
+              className="inline-flex items-center gap-1.5 rounded-full border-2 border-line px-3.5 py-2 text-sm font-bold text-ink-soft transition hover:border-brand-400 hover:text-ink"
             >
               <X className="size-4" aria-hidden="true" />
               Quitar

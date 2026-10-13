@@ -97,7 +97,7 @@ function serialize({ groups, includeTitle, includeNote, includeItems }: Draft): 
 }
 
 const field =
-  "rounded-xl border-2 border-line bg-white px-3 py-2 text-base outline-none transition placeholder:text-ink-soft/50 focus:border-ink";
+  "rounded-xl border-2 border-line bg-white px-3 py-2 text-base outline-none transition placeholder:text-ink-soft/50 focus:border-brand-500";
 const small = `w-full ${field}`;
 
 /** Enter dentro de estos campos no debe enviar el formulario. */
@@ -175,7 +175,7 @@ export function OptionsEditor({ name, initial }: { name: string; initial: string
                   onChange={(event) =>
                     setGroup(gi, { ...group, required: event.target.checked ? true : undefined })
                   }
-                  className="size-5 accent-ink"
+                  className="size-5 accent-brand-500"
                 />
                 Es obligatorio elegir
               </label>
@@ -186,7 +186,7 @@ export function OptionsEditor({ name, initial }: { name: string; initial: string
                   onChange={(event) =>
                     setGroup(gi, { ...group, showInMenu: event.target.checked ? undefined : false })
                   }
-                  className="size-5 accent-ink"
+                  className="size-5 accent-brand-500"
                 />
                 Mostrarlo en el menú
               </label>
@@ -248,7 +248,7 @@ export function OptionsEditor({ name, initial }: { name: string; initial: string
                     options: [...group.options, { id: newId("opcion", "opcion"), name: "" }],
                   })
                 }
-                className="mt-2 inline-flex items-center gap-1.5 rounded-full border-2 border-line px-3.5 py-2 text-sm font-bold transition hover:border-ink"
+                className="mt-2 inline-flex items-center gap-1.5 rounded-full border-2 border-line px-3.5 py-2 text-sm font-bold transition hover:border-brand-400"
               >
                 <Plus className="size-4" aria-hidden="true" />
                 Agregar opción
@@ -275,7 +275,7 @@ export function OptionsEditor({ name, initial }: { name: string; initial: string
             ],
           })
         }
-        className="inline-flex items-center gap-1.5 rounded-full border-2 border-line px-4 py-2 text-sm font-bold transition hover:border-ink"
+        className="inline-flex items-center gap-1.5 rounded-full border-2 border-line px-4 py-2 text-sm font-bold transition hover:border-brand-400"
       >
         <Plus className="size-4" aria-hidden="true" />
         Agregar grupo de opciones

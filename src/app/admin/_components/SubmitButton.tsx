@@ -23,7 +23,7 @@ export function SubmitButton({
 
   const base =
     variant === "ghost"
-      ? "inline-flex items-center justify-center gap-2 rounded-full border-2 border-line px-4 py-2 text-sm font-bold transition hover:border-ink disabled:opacity-50"
+      ? "inline-flex items-center justify-center gap-2 rounded-full border-2 border-line px-4 py-2 text-sm font-bold transition hover:border-brand-400 disabled:opacity-50"
       : `${buttonClass(variant === "light" ? "light" : "primary", "md")} disabled:opacity-60`;
 
   return (

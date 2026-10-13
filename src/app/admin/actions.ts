@@ -2,8 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { parseZoneLines, planZoneSync, type StoredZone } from "@/lib/barrios";
 import { fileContent, getMenu, getSite } from "@/lib/content";
 import { sanitizeIncludes, sanitizeOptionGroups } from "@/lib/content-schema";
+import { formatCOP } from "@/lib/format";
 import { normalizeWhatsapp } from "@/lib/order";
 import { slug, uniqueId } from "@/lib/slug";
 import type { ContentKey } from "@/lib/supabase/config";
@@ -96,9 +98,8 @@ async function save(key: ContentKey, data: unknown): Promise<string | null> {
       : `No se pudo guardar: ${error.message}`;
   }
 
-  revalidatePath("/");
-  revalidatePath("/admin");
-  revalidatePath("/admin/ajustes");
+  // El inicio, el menú del QR, la página de domicilios y el propio panel.
+  revalidatePath("/", "layout");
   return null;
 }
 
@@ -213,11 +214,89 @@ export async function saveSite(
     payments: commaList(form, "payments"),
     notAccepted: commaList(form, "notAccepted"),
     delivery: checked(form, "delivery"),
+    // El recargo de domicilios se edita en la pestaña Domicilios: aquí se conserva tal cual.
+    deliverySurcharge: current.deliverySurcharge,
     promo,
   };
 
   const error = await save("site", site);
   return error ? fail(form, error) : { ok: "Ajustes guardados y publicados." };
+}
+
+/* ------------------------------------------------------------------ */
+/* Domicilios: recargo y barrios                                       */
+/* ------------------------------------------------------------------ */
+
+export async function saveSurcharge(
+  _previous: FormState,
+  form: FormData,
+): Promise<FormState> {
+  const amount = money(form, "deliverySurcharge") ?? 0;
+  const current = await getSite();
+
+  const error = await save("site", { ...current, deliverySurcharge: amount });
+  if (error) return fail(form, error);
+
+  return {
+    ok:
+      amount > 0
+        ? `Listo: cada producto de domicilio cuesta ${formatCOP(amount)} más que en el local.`
+        : "Listo: los domicilios tienen los mismos precios del local.",
+  };
+}
+
+function zonesProblem(message: string) {
+  if (/delivery_zones|schema cache/i.test(message) && !message.includes("row-level security")) {
+    return "Falta crear la tabla de barrios en Supabase. Corre el SQL de supabase/schema.sql (sección Barrios de domicilio).";
+  }
+  return message.includes("row-level security")
+    ? "Supabase rechazó el cambio. Revisa que hayas ejecutado el SQL de los barrios (supabase/schema.sql)."
+    : `No se pudo guardar: ${message}`;
+}
+
+/**
+ * Deja la tabla `delivery_zones` igual a la lista escrita en el panel: agrega los barrios nuevos,
+ * actualiza los que cambiaron de valor y quita los que ya no están.
+ */
+export async function saveZones(
+  _previous: FormState,
+  form: FormData,
+): Promise<FormState> {
+  const supabase = await serverClient();
+  const { data: session } = await supabase.auth.getUser();
+  if (!session.user) return fail(form, "Tu sesión se cerró. Vuelve a entrar.");
+
+  const { zones: desired, errors } = parseZoneLines(String(form.get("zones") ?? ""));
+  if (errors.length > 0) {
+    return fail(form, `No se guardó nada. Revisa estos barrios: ${errors.join(" ")}`);
+  }
+
+  const { data: current, error: readError } = await supabase
+    .from("delivery_zones")
+    .select("id,name,fee");
+  if (readError) return fail(form, zonesProblem(readError.message));
+
+  const plan = planZoneSync((current ?? []) as StoredZone[], desired);
+
+  if (plan.deleteIds.length > 0) {
+    const { error } = await supabase.from("delivery_zones").delete().in("id", plan.deleteIds);
+    if (error) return fail(form, zonesProblem(error.message));
+  }
+  if (plan.updates.length > 0) {
+    const { error } = await supabase
+      .from("delivery_zones")
+      .upsert(plan.updates, { onConflict: "id" });
+    if (error) return fail(form, zonesProblem(error.message));
+  }
+  if (plan.inserts.length > 0) {
+    const { error } = await supabase.from("delivery_zones").insert(plan.inserts);
+    if (error) return fail(form, zonesProblem(error.message));
+  }
+
+  revalidatePath("/", "layout");
+  return {
+    ok: `Listo: ${desired.length} barrios guardados (${plan.inserts.length} nuevos, ${plan.updates.length} cambiados, ${plan.deleteIds.length} quitados). Ya están en el sitio.`,
+  };
 }
 
 /* ------------------------------------------------------------------ */

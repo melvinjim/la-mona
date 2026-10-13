@@ -1,7 +1,9 @@
+import { Bike } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import type { SiteSettings } from "@/lib/types";
+import type { SiteMode, SiteSettings } from "@/lib/types";
 import { InstagramIcon } from "./brand-icons";
+import { buttonClass } from "./button-styles";
 import { CartButton } from "./cart/CartButton";
 
 const links = [
@@ -10,7 +12,7 @@ const links = [
   { href: "#contacto", label: "Contacto" },
 ];
 
-export function Header({ site }: { site: SiteSettings }) {
+export function Header({ site, mode }: { site: SiteSettings; mode: SiteMode }) {
   return (
     <header className="relative z-40 bg-cream lg:sticky lg:top-0 lg:border-b lg:border-line/80">
       <div className="mx-auto flex h-[4.5rem] max-w-6xl items-center justify-between gap-4 px-4 sm:px-8">
@@ -61,9 +63,21 @@ export function Header({ site }: { site: SiteSettings }) {
               <InstagramIcon className="size-5" />
             </a>
           )}
-          <div className="hidden lg:block">
-            <CartButton />
-          </div>
+          {mode === "domicilio" ? (
+            <div className="hidden lg:block">
+              <CartButton />
+            </div>
+          ) : (
+            site.delivery && (
+              <Link
+                href="/domicilios"
+                className={buttonClass("dark", "md", "on-dark hidden sm:inline-flex")}
+              >
+                <Bike className="size-5" aria-hidden="true" />
+                Pedir a domicilio
+              </Link>
+            )
+          )}
         </div>
       </div>
     </header>

@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from "react";
 import type { Catalog, NewLine, ResolvedLine } from "@/lib/cart";
-import type { SiteSettings } from "@/lib/types";
+import type { DeliveryZone, SiteSettings } from "@/lib/types";
 
 /** Datos que necesita el carrito para armar y enviar el pedido. */
 export type CheckoutConfig = {
@@ -11,6 +11,8 @@ export type CheckoutConfig = {
   /** Enlace al chat de Instagram, para pegar el pedido cuando no hay WhatsApp. */
   instagramUrl?: string;
   delivery: boolean;
+  /** Barrios con domicilio y su valor; si está vacío no se pide el barrio. */
+  zones: DeliveryZone[];
   payments: string[];
   hours: SiteSettings["hours"];
   timeZone: string;

@@ -28,6 +28,10 @@ export const site: SiteSettings = {
   payments: ["Bancolombia", "Davivienda", "Llave"],
   notAccepted: ["Nequi"],
   delivery: true,
+  // Menú de domicilios: cada producto cuesta esto más que en el menú del local.
+  deliverySurcharge: 1000,
+  // Los barrios con domicilio y su valor NO van aquí: viven en la tabla delivery_zones de
+  // Supabase y se editan desde el panel (pestaña Domicilios).
 
   // Ventana de promoción al entrar al sitio. Para usarla: pon la imagen en /public, escribe su ruta
   // en `image`, cambia `active` a true y, con cada promoción nueva, cambia el `id`.

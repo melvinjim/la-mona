@@ -6,6 +6,8 @@ export type Delivery = "domicilio" | "recoger";
 export type Customer = {
   name: string;
   delivery: Delivery;
+  /** Barrio tal como lo escribió el cliente; el carrito lo reconoce contra la lista de barrios. */
+  barrio: string;
   address: string;
   payment: string;
 };
@@ -13,6 +15,7 @@ export type Customer = {
 export const emptyCustomer: Customer = {
   name: "",
   delivery: "domicilio",
+  barrio: "",
   address: "",
   payment: "",
 };
@@ -24,6 +27,7 @@ export function parseCustomer(raw: string | null): Customer {
     return {
       name: typeof data.name === "string" ? data.name.slice(0, 80) : "",
       delivery: data.delivery === "recoger" ? "recoger" : "domicilio",
+      barrio: typeof data.barrio === "string" ? data.barrio.slice(0, 80) : "",
       address: typeof data.address === "string" ? data.address.slice(0, 200) : "",
       payment: typeof data.payment === "string" ? data.payment.slice(0, 40) : "",
     };
@@ -63,10 +67,15 @@ function localMoment(timeZone: string, now: Date) {
   };
 }
 
+/** Domicilio ya reconocido: el barrio (con su nombre oficial) y lo que cuesta llevar el pedido. */
+export type Shipping = { zone: string; fee: number };
+
 type MessageInput = {
   lines: ResolvedLine[];
   customer: Customer;
   comments: string;
+  /** Barrio y valor del domicilio; `null` si no hay lista de barrios o es para recoger. */
+  shipping?: Shipping | null;
   timeZone: string;
   /** Momento del pedido; se puede fijar para probar. */
   now?: Date;
@@ -74,17 +83,20 @@ type MessageInput = {
 
 /**
  * Mensaje que llega al WhatsApp del restaurante. Solo cuenta las líneas "ok";
- * el total se calcula aquí con los precios vigentes del menú y va al final.
+ * el total (productos + domicilio) se calcula aquí con los precios vigentes y va al final.
  */
 export function buildOrderMessage({
   lines,
   customer,
   comments,
+  shipping = null,
   timeZone,
   now = new Date(),
 }: MessageInput): string {
   const items = lines.filter((line) => line.status === "ok");
-  const total = items.reduce((sum, line) => sum + line.total, 0);
+  const subtotal = items.reduce((sum, line) => sum + line.total, 0);
+  const fee = customer.delivery === "domicilio" && shipping ? shipping.fee : 0;
+  const total = subtotal + fee;
   const moment = localMoment(timeZone, now);
 
   const parts = [
@@ -96,6 +108,7 @@ export function buildOrderMessage({
     `*Nombre:* ${oneLine(customer.name)}`,
   ];
   if (customer.delivery === "domicilio") {
+    if (shipping) parts.push(`*Barrio:* ${oneLine(shipping.zone)}`);
     parts.push(`*Dirección:* ${oneLine(customer.address)}`);
   }
 
@@ -117,6 +130,10 @@ export function buildOrderMessage({
 
   parts.push("", "*💲 Pago*");
   if (customer.payment) parts.push(`Medio de pago: ${customer.payment}`);
+  if (customer.delivery === "domicilio" && shipping) {
+    parts.push(`Total factura: ${formatCOP(subtotal)}`);
+    parts.push(`Domicilio (${oneLine(shipping.zone)}): ${formatCOP(fee)}`);
+  }
   parts.push(`*Total a pagar: ${formatCOP(total)}*`);
 
   return parts.join("\n");

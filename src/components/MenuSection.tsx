@@ -10,7 +10,15 @@ import { AddButton, AddChip } from "./cart/AddButton";
 import { categoryIcons } from "./category-icons";
 import { Price } from "./Price";
 
-function ItemRow({ item, fallbackPrice }: { item: MenuItem; fallbackPrice?: number }) {
+function ItemRow({
+  item,
+  fallbackPrice,
+  ordering,
+}: {
+  item: MenuItem;
+  fallbackPrice?: number;
+  ordering: boolean;
+}) {
   const price = item.price ?? fallbackPrice;
   const soldOut = item.available === false;
 
@@ -49,7 +57,7 @@ function ItemRow({ item, fallbackPrice }: { item: MenuItem; fallbackPrice?: numb
                   value={price}
                   className="font-display text-[1.4rem] font-bold leading-none text-brand-700"
                 />
-                <AddButton itemId={item.id} />
+                {ordering && <AddButton itemId={item.id} />}
               </>
             )
           )}
@@ -64,12 +72,24 @@ function ItemRow({ item, fallbackPrice }: { item: MenuItem; fallbackPrice?: numb
   );
 }
 
-function Chips({ items }: { items: MenuItem[] }) {
+function Chips({ items, ordering }: { items: MenuItem[]; ordering: boolean }) {
   return (
     <ul className="mt-4 flex flex-wrap gap-2">
       {items.map((item) => (
         <li key={item.id}>
-          <AddChip itemId={item.id} name={item.name} />
+          {ordering ? (
+            <AddChip itemId={item.id} name={item.name} />
+          ) : (
+            <span
+              className={`inline-flex rounded-full border px-4 py-2 text-[0.95rem] font-semibold ${
+                item.available === false
+                  ? "border-line bg-sand/60 text-ink-soft line-through"
+                  : "border-brand-200 bg-brand-50"
+              }`}
+            >
+              {item.name}
+            </span>
+          )}
         </li>
       ))}
     </ul>
@@ -158,7 +178,14 @@ function OptionsPanel({ group }: { group: OptionGroup }) {
   );
 }
 
-export function MenuSection({ category }: { category: MenuCategory }) {
+/** `ordering`: muestra los botones + para armar el pedido (solo en la página de domicilios). */
+export function MenuSection({
+  category,
+  ordering = false,
+}: {
+  category: MenuCategory;
+  ordering?: boolean;
+}) {
   const Icon = categoryIcons[category.icon];
   const titleId = `${category.id}-titulo`;
 
@@ -197,7 +224,7 @@ export function MenuSection({ category }: { category: MenuCategory }) {
           )}
 
           {category.layout === "chips" ? (
-            <Chips items={category.items} />
+            <Chips items={category.items} ordering={ordering} />
           ) : (
             <ul className={category.note ? "mt-1" : "-mt-1"}>
               {category.items.map((item) => (
@@ -205,6 +232,7 @@ export function MenuSection({ category }: { category: MenuCategory }) {
                   key={item.id}
                   item={item}
                   fallbackPrice={category.price}
+                  ordering={ordering}
                 />
               ))}
             </ul>

@@ -1,7 +1,8 @@
 import { Bike, Clock, MapPin, Wallet, type LucideIcon } from "lucide-react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { formatTime } from "@/lib/format";
-import type { SiteSettings } from "@/lib/types";
+import type { SiteMode, SiteSettings } from "@/lib/types";
 
 type Item = {
   icon: LucideIcon;
@@ -10,7 +11,7 @@ type Item = {
   note?: string;
 };
 
-export function InfoStrip({ site }: { site: SiteSettings }) {
+export function InfoStrip({ site, mode }: { site: SiteSettings; mode: SiteMode }) {
   const items: Item[] = [
     {
       icon: Clock,
@@ -22,7 +23,17 @@ export function InfoStrip({ site }: { site: SiteSettings }) {
           {
             icon: Bike,
             label: "Domicilio",
-            value: "Servicio a domicilio disponible",
+            value:
+              mode === "domicilio" ? (
+                "Servicio a domicilio disponible"
+              ) : (
+                <Link
+                  href="/domicilios"
+                  className="underline decoration-brand-300 decoration-2 underline-offset-4 transition hover:text-brand-700"
+                >
+                  Pide a domicilio aquí
+                </Link>
+              ),
           },
         ]
       : []),

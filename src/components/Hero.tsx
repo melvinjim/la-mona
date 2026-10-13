@@ -1,8 +1,9 @@
 import { ArrowDown, Bike, ChefHat } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { formatCOP } from "@/lib/format";
 import { minPrice, type ChatLink } from "@/lib/order";
-import type { MenuCategory, SiteSettings } from "@/lib/types";
+import type { MenuCategory, SiteMode, SiteSettings } from "@/lib/types";
 import { buttonClass } from "./button-styles";
 import { categoryIcons } from "./category-icons";
 import { ChatButton } from "./ChatButton";
@@ -12,6 +13,7 @@ type Props = {
   site: SiteSettings;
   menu: MenuCategory[];
   chat: ChatLink | null;
+  mode: SiteMode;
 };
 
 function DeliverySticker({ className = "" }: { className?: string }) {
@@ -75,7 +77,9 @@ function PriceTicket({ menu }: { menu: MenuCategory[] }) {
   );
 }
 
-export function Hero({ site, menu, chat }: Props) {
+export function Hero({ site, menu, chat, mode }: Props) {
+  const ordering = mode === "domicilio";
+
   return (
     <section
       aria-labelledby="titulo-principal"
@@ -107,13 +111,23 @@ export function Hero({ site, menu, chat }: Props) {
               id="titulo-principal"
               className="mt-5 font-display text-[clamp(3rem,14vw,4.5rem)] font-extrabold uppercase leading-[0.86] tracking-tight sm:text-[5.75rem] lg:text-[6.75rem]"
             >
-              <span className="block text-white">Menú disponible</span>
-              <span className="block">para llevar</span>
+              {ordering ? (
+                <>
+                  <span className="block text-white">Menú disponible</span>
+                  <span className="block">para llevar</span>
+                </>
+              ) : (
+                <>
+                  <span className="block text-white">Nuestro menú</span>
+                  <span className="block">del restaurante</span>
+                </>
+              )}
             </h1>
 
             <p className="mt-5 max-w-md text-lg font-semibold leading-snug sm:text-xl">
-              Desayunos, ejecutivos, asados y más. Arma tu pedido aquí y envíalo por
-              WhatsApp{site.delivery ? ", a domicilio o para recoger." : "."}
+              {ordering
+                ? "Desayunos, ejecutivos, asados y más. Arma tu pedido aquí y envíalo por WhatsApp: te lo llevamos a tu barrio o pasas a recogerlo."
+                : "Desayunos, ejecutivos, asados, cayeye, fritos y bebidas. Estos son los precios del menú en el local."}
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
@@ -121,15 +135,27 @@ export function Hero({ site, menu, chat }: Props) {
                 href="#menu"
                 className={buttonClass("dark", "lg", "w-full sm:w-auto")}
               >
-                Hacer mi pedido
+                {ordering ? "Hacer mi pedido" : "Ver el menú"}
                 <ArrowDown className="size-5" aria-hidden="true" />
               </a>
-              <ChatButton
-                chat={chat}
-                variant="light"
-                size="lg"
-                className="w-full sm:w-auto"
-              />
+              {ordering ? (
+                <ChatButton
+                  chat={chat}
+                  variant="light"
+                  size="lg"
+                  className="w-full sm:w-auto"
+                />
+              ) : (
+                site.delivery && (
+                  <Link
+                    href="/domicilios"
+                    className={buttonClass("light", "lg", "w-full sm:w-auto")}
+                  >
+                    <Bike className="size-5" aria-hidden="true" />
+                    Pedir a domicilio
+                  </Link>
+                )
+              )}
             </div>
 
             <OpenStatus
@@ -151,12 +177,12 @@ export function Hero({ site, menu, chat }: Props) {
                   className="object-cover"
                 />
               </div>
-              {site.delivery && <DeliverySticker className="hidden lg:grid" />}
+              {ordering && <DeliverySticker className="hidden lg:grid" />}
             </div>
           ) : (
             <div className="relative mx-auto hidden w-full max-w-sm lg:block">
               <PriceTicket menu={menu} />
-              {site.delivery && <DeliverySticker className="grid" />}
+              {ordering && <DeliverySticker className="grid" />}
             </div>
           )}
         </div>

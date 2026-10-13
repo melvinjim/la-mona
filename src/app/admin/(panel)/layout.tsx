@@ -29,7 +29,7 @@ export default async function PanelLayout({ children }: { children: ReactNode })
 
   return (
     <div className="min-h-dvh bg-cream">
-      <header className="sticky top-0 z-30 border-b border-line bg-cream/95 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-line bg-cream/95 backdrop-blur print:hidden">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
           <p className="font-display text-xl font-extrabold uppercase leading-none tracking-wide">
             {site.name}
@@ -44,6 +44,12 @@ export default async function PanelLayout({ children }: { children: ReactNode })
             </Link>
             <Link href="/admin/ajustes" className={tabClass}>
               Ajustes
+            </Link>
+            <Link href="/admin/domicilios" className={tabClass}>
+              Domicilios
+            </Link>
+            <Link href="/admin/qr" className={tabClass}>
+              Código QR
             </Link>
           </nav>
 
@@ -71,7 +77,7 @@ export default async function PanelLayout({ children }: { children: ReactNode })
 
       <main className="mx-auto max-w-3xl px-4 py-6">{children}</main>
 
-      <p className="pb-10 text-center text-xs text-ink-soft">
+      <p className="pb-10 text-center text-xs text-ink-soft print:hidden">
         Conectado como {admin.email}
       </p>
     </div>

@@ -1,7 +1,8 @@
 # Restaurante La Mona — sitio web
 
-Página del restaurante: menú con precios, **carrito que suma el pedido y lo envía por WhatsApp**, horario,
-medios de pago y ventana de promoción. Funciona en celular, tablet y computador. Hecha con **Next.js 16**
+Página del restaurante: portada con dos caminos (**ver el menú** o **pedir a domicilio**), menú con precios,
+**carrito que suma el pedido, cobra el domicilio por barrio y lo envía por WhatsApp**, horario, medios de pago
+y ventana de promoción. Funciona en celular, tablet y computador. Hecha con **Next.js 16**
 (App Router), **Tailwind CSS 4** y TypeScript; lista para desplegar en **Vercel**.
 
 ## Ver el sitio en tu computador
@@ -14,6 +15,15 @@ npm run dev
 ```
 
 Abre <http://localhost:3000>. Los cambios se ven al guardar el archivo.
+
+## Las páginas del sitio
+
+| Dirección     | Qué es                                                                                                                                  |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`           | Portada: "¿Qué quieres hacer?" con dos opciones, **Ver el menú** y **Pedir a domicilio**.                                                |
+| `/menu`       | La carta del local, solo para ver (sin carrito) y con los **precios del local**. Es la dirección del **código QR** que va en las mesas. |
+| `/domicilios` | Para pedir: carrito, **precios de domicilio** (cada producto cuesta un recargo más), barrio y envío por WhatsApp. También se puede **recoger en el local**. |
+| `/admin`      | Panel del restaurante. Se entra tocando el logo del pie de página.                                                                      |
 
 ## Dónde se cambia cada cosa
 
@@ -42,9 +52,11 @@ Para ocultar un plato por un rato sin borrarlo: `available: false` (se muestra c
 Cada plato tiene un botón **+** que abre su ventana: foto, precio, lo que haya que elegir (acompañante, agua o
 leche, adicionales), una nota y la cantidad. Siempre se abre, también en gaseosas o fritos, para poder ajustar
 cantidad y nota antes de agregar.
-El total se suma solo. En **Mi pedido** el cliente escribe su nombre, elige domicilio o recoger (con dirección),
-el medio de pago si quiere y comentarios, y al pulsar **Enviar pedido por WhatsApp** se abre el chat del
-restaurante con el mensaje ya escrito:
+El carrito solo existe en `/domicilios` (en `/menu` no hay botones para pedir). En **Mi pedido** el cliente
+escribe su nombre y elige **Domicilio** o **Recoger en el local**. A domicilio escribe además su **barrio** (se valida
+y se suma el domicilio) y la dirección; para recoger no se piden dirección ni barrio y no se cobra domicilio. Luego
+el medio de pago si quiere y comentarios, y al pulsar **Enviar pedido por WhatsApp** se abre el chat del restaurante
+con el mensaje ya escrito (el de abajo es el de un domicilio):
 
 ```
 Hola, buenos días 👋 Quisiera hacer este pedido:
@@ -53,6 +65,7 @@ Hola, buenos días 👋 Quisiera hacer este pedido:
 
 *Tipo de servicio:* Domicilio
 *Nombre:* Juan Pérez
+*Barrio:* San Isidro
 *Dirección:* Calle 10 # 5-20, apto 301
 
 *📝 Pedido*
@@ -68,7 +81,9 @@ Tocar el timbre
 
 *💲 Pago*
 Medio de pago: Bancolombia
-*Total a pagar: $37.000*
+Total factura: $37.000
+Domicilio (San Isidro): $5.000
+*Total a pagar: $42.000*
 ```
 
 - El saludo cambia según la hora de Colombia (buenos días / buenas tardes / buenas noches). El formato se edita en
@@ -79,6 +94,32 @@ Medio de pago: Bancolombia
   `price` suma ese valor; sin `price` va incluida. `required: true` obliga a elegir; `multiple: true` permite marcar varias; `counted: true` muestra un contador para pedir varias unidades (ej. 2 adicionales de chorizo, cada uno suma su precio; la cantidad también se puede escribir, ej. 15).
   Todo lo que se cobra aparte (papas fritas, cayeye, queso, chicharrón…) va en un grupo `counted`; lo que viene incluido y se elige una sola vez (yuca, patacones…) va en un grupo normal.
 - Sin número de WhatsApp configurado, el carrito ofrece **Copiar mi pedido** para pegarlo en el chat de Instagram.
+
+## Domicilios: precios y barrios
+
+- **Precios de domicilio.** Cada producto cuesta `deliverySurcharge` pesos más que en el menú del local (hoy
+  **$1.000**). Se suma al precio de cada plato y al precio único de una categoría (los batidos); los adicionales
+  (papas, cayeye…) no cambian. En `/menu` siempre se ven los precios del local. Se cambia en el panel
+  (pestaña *Domicilios*) o en `src/data/site.ts`. Quien elige *Recoger en el local* ve los mismos precios de esta
+  página, pero sin domicilio.
+- **Los barrios viven en la base de datos**, en la tabla `delivery_zones` de Supabase (nombre y valor), no en el
+  código. Se editan en el panel, pestaña *Domicilios*, con una línea por barrio: `San Isidro - 5000` (se puede
+  pegar la lista completa; también sirven los dos puntos, la coma o pegar desde Excel; lo que se quita de la lista
+  se quita del sitio). También se pueden cargar directo en Supabase: *Table Editor → delivery_zones → Insert →
+  Import data from CSV* (columnas `name` y `fee`).
+- **Crear la tabla (una sola vez):** el SQL está en `supabase/schema.sql`, sección *Barrios de domicilio*. Si todavía
+  no existe, el panel lo muestra listo para copiar y el sitio funciona igual, sin pedir el barrio.
+- **El cliente puede escribir el barrio "como sea".** Se compara por cómo suena en español, no por cómo se escribe:
+  `san isidro`, `sanisidro`, `SANSISDRO`, `SANISISdro`, `Barrio San Isidro`, con tildes o sin ellas, con b/v, s/z/c o h
+  de más o de menos. Al reconocerlo, el campo queda con el nombre oficial y se muestra el valor del domicilio.
+  Si hay dudas (`isidro` puede ser *San Isidro* o *San Isidro II*) se ofrecen botones para tocar el correcto, y si
+  el barrio no existe no deja enviar el pedido.
+- **Totales:** *Total factura* (productos), *Domicilio* (valor del barrio) y *Total a pagar*; el mensaje de WhatsApp
+  trae el mismo desglose. Para recoger solo hay un total.
+- Mientras la tabla esté vacía (o no exista), el carrito no pide el barrio ni suma domicilio.
+- Código: `src/lib/barrios.ts` (reconocimiento, lectura de la lista y sincronización con la tabla),
+  `src/lib/delivery.ts` (recargo), `src/components/cart/BarrioField.tsx` (el campo) y
+  `src/app/admin/_components/DeliveryForms.tsx` (el panel).
 
 ## Ventana de promoción
 
@@ -100,6 +141,8 @@ promo: {
 
 Estos datos no estaban en la imagen del menú, por eso no aparecen todavía:
 
+- **Barrios con domicilio y su valor:** crear la tabla (SQL en `supabase/schema.sql`) y cargar la lista del
+  restaurante en el panel, pestaña *Domicilios*.
 - **Dirección, teléfono y enlace de Google Maps** (`address`, `phone`, `mapsUrl`). Al llenarlos aparecen
   solos en la franja de información y en el pie de página.
 - **Horario**: el menú dice "5:00 a.m. a 1:00 a.m."; confirma si el cierre es a la 1:00 a.m. o a la 1:00 p.m.
@@ -138,9 +181,24 @@ Si algún día usas otro servicio de almacenamiento, agrega su dominio en `next.
    que cambiar ninguna configuración. Pulsa **Deploy**.
 3. Desde ahí, cada `git push` a `main` publica la nueva versión automáticamente.
 4. Dominio propio: *Settings → Domains*. Después crea la variable de entorno `NEXT_PUBLIC_SITE_URL`
-   (ej. `https://lamona.com.co`) para que el enlace compartido en WhatsApp use ese dominio.
+   (ej. `https://restlamona22.com`) para que el enlace compartido en WhatsApp y el QR usen ese dominio (más abajo, la guía completa).
 
 Sin GitHub también se puede: `npx vercel` desde esta carpeta.
+
+### Dominio `restlamona22.com` (comprado en Cloudflare)
+
+1. **Comprarlo:** en [dash.cloudflare.com](https://dash.cloudflare.com), *Domain Registration → Register Domains*,
+   busca `restlamona22.com` y cómpralo (Cloudflare lo vende al costo y el dominio queda en su DNS).
+2. **Agregarlo a Vercel:** en el proyecto, *Settings → Domains → Add*, escribe `restlamona22.com` (y también
+   `www.restlamona22.com`, que se redirige al principal). Vercel muestra los registros DNS exactos que necesita.
+3. **Crear esos registros en Cloudflare:** *DNS → Records → Add record*, copiando lo que dice Vercel (normalmente un
+   registro `A` con nombre `@` y un `CNAME` con nombre `www`). Deja la nube en **gris ("Solo DNS")**, no naranja,
+   al menos hasta que Vercel marque el dominio como válido; el certificado HTTPS lo emite Vercel solo.
+4. **Avisarle al sitio cuál es su dirección:** en Vercel, *Settings → Environment Variables*, crea
+   `NEXT_PUBLIC_SITE_URL` con el valor `https://restlamona22.com` y vuelve a desplegar. Esa variable la usan los
+   enlaces compartidos, el mapa del sitio y el **código QR**.
+5. **El QR:** en el panel, pestaña *Código QR*, ya sale con `https://restlamona22.com/menu`. Se imprime desde ahí.
+   Hazlo después del paso 4: mientras el sitio no tenga su dominio, el QR apunta a una dirección de prueba.
 
 ## Panel administrativo
 
@@ -171,6 +229,13 @@ panel muestra las instrucciones de configuración.
    En Vercel, las mismas en *Settings → Environment Variables*, y vuelve a desplegar.
 5. Entra a `/admin`, inicia sesión y pulsa **Copiar el menú actual a Supabase**. A partir de ahí el menú se
    edita desde el panel y los archivos de `src/data` quedan solo como respaldo.
+
+### Código QR de las mesas
+
+En el panel, pestaña **Código QR**: muestra una tarjeta lista para imprimir (logo, "Escanea y mira nuestro menú" y
+el QR) con botones para imprimir o guardar en PDF y descargar el PNG o el SVG. El QR abre `/menu` y no cambia
+aunque se cambien precios o platos. Si el sitio todavía no tiene su dominio definitivo, la página avisa que no se
+imprima aún.
 
 ### Cómo está hecho
 

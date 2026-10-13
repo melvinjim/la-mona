@@ -1,0 +1,34 @@
+import type { Metadata } from "next";
+import { getSite, getZoneList } from "@/lib/content";
+import { SurchargeForm, ZonesForm } from "../../_components/DeliveryForms";
+import { ZonesSetupNotice } from "../../_components/ZonesSetupNotice";
+
+export const metadata: Metadata = {
+  title: "Domicilios",
+  robots: { index: false, follow: false },
+};
+
+export default async function DomiciliosPage() {
+  const [site, zones] = await Promise.all([getSite(), getZoneList()]);
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h1 className="font-display text-4xl font-extrabold uppercase leading-none">
+          Domicilios
+        </h1>
+        <p className="mt-1.5 text-sm text-ink-soft">
+          Cuánto más cuestan los productos a domicilio y el valor de cada barrio.
+        </p>
+      </div>
+
+      <SurchargeForm surcharge={site.deliverySurcharge ?? 0} />
+
+      {zones.state === "ok" ? (
+        <ZonesForm zones={zones.zones} />
+      ) : (
+        <ZonesSetupNotice state={zones.state} />
+      )}
+    </div>
+  );
+}

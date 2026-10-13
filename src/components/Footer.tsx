@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { formatTime } from "@/lib/format";
 import type { ChatLink } from "@/lib/order";
-import type { SiteSettings } from "@/lib/types";
+import type { SiteMode, SiteSettings } from "@/lib/types";
 import { InstagramIcon } from "./brand-icons";
 import { buttonClass } from "./button-styles";
 import { ChatButton } from "./ChatButton";
@@ -13,9 +13,12 @@ const year = new Date().getFullYear();
 type Props = {
   site: SiteSettings;
   chat: ChatLink | null;
+  mode: SiteMode;
 };
 
-export function Footer({ site, chat }: Props) {
+export function Footer({ site, chat, mode }: Props) {
+  const ordering = mode === "domicilio";
+
   return (
     <footer
       id="contacto"
@@ -25,17 +28,27 @@ export function Footer({ site, chat }: Props) {
         <div className="flex flex-col gap-7 border-b border-white/15 pb-12 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="font-display text-base font-bold uppercase tracking-[0.22em] text-brand-400">
-              ¿Se te antojó algo?
+              {ordering ? "¿Se te antojó algo?" : "¿Prefieres que te lo llevemos?"}
             </p>
             <p className="mt-2 font-display text-[3.25rem] font-extrabold uppercase leading-[0.92] sm:text-6xl">
-              Haz tu pedido aquí
+              {ordering ? "Haz tu pedido aquí" : "Pide a domicilio"}
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <a href="#menu" className={buttonClass("primary", "lg")}>
-              Hacer mi pedido
-            </a>
-            <ChatButton chat={chat} variant="light" size="lg" />
+            {ordering ? (
+              <>
+                <a href="#menu" className={buttonClass("primary", "lg")}>
+                  Hacer mi pedido
+                </a>
+                <ChatButton chat={chat} variant="light" size="lg" />
+              </>
+            ) : (
+              site.delivery && (
+                <Link href="/domicilios" className={buttonClass("primary", "lg")}>
+                  Pedir a domicilio
+                </Link>
+              )
+            )}
           </div>
         </div>
 

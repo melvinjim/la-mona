@@ -1,5 +1,7 @@
+import { slug } from "./slug";
 import type {
   CategoryIcon,
+  DeliveryZone,
   IncludedList,
   MenuCategory,
   MenuItem,
@@ -175,6 +177,20 @@ function validTimeZone(value: unknown): string | undefined {
   }
 }
 
+/** Barrios con domicilio: sin nombre o sin valor se descartan; los ids repetidos se corrigen. */
+export function sanitizeZones(raw: unknown): DeliveryZone[] {
+  if (!Array.isArray(raw)) return [];
+  const taken = new Set<string>();
+  return raw.flatMap((entry): DeliveryZone[] => {
+    if (!isObject(entry)) return [];
+    const name = filled(entry.name);
+    const fee = money(entry.fee);
+    if (!name || fee === undefined) return [];
+    const id = filled(entry.id) ?? (slug(name) || "barrio");
+    return [{ id: freeId(id, taken), name, fee }];
+  });
+}
+
 function sanitizePromo(raw: unknown): Promo | undefined {
   if (!isObject(raw)) return undefined;
   const cta = isObject(raw.cta) ? raw.cta : null;
@@ -216,6 +232,7 @@ export function sanitizeSite(raw: unknown, fallback: SiteSettings): SiteSettings
     payments: stringList(raw.payments) ?? fallback.payments,
     notAccepted: stringList(raw.notAccepted),
     delivery: typeof raw.delivery === "boolean" ? raw.delivery : fallback.delivery,
+    deliverySurcharge: money(raw.deliverySurcharge) ?? fallback.deliverySurcharge,
     promo: sanitizePromo(raw.promo),
   };
 }

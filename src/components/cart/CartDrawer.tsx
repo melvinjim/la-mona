@@ -1,7 +1,8 @@
 "use client";
 
 import { Check, Copy, ShoppingBag, TriangleAlert, X } from "lucide-react";
-import { useId, useState, type FormEvent } from "react";
+import { useId, useMemo, useState, type FormEvent } from "react";
+import { matchZone } from "@/lib/barrios";
 import { optionLabel, type ResolvedLine } from "@/lib/cart";
 import { formatCOP, formatTimeWithArticle } from "@/lib/format";
 import { customerStore } from "@/lib/local-store";
@@ -15,6 +16,7 @@ import { InstagramIcon, WhatsAppIcon } from "../brand-icons";
 import { buttonClass } from "../button-styles";
 import { Modal } from "../Modal";
 import { useOpenState } from "../use-open-state";
+import { BarrioField } from "./BarrioField";
 import { useCart } from "./cart-context";
 import { Stepper } from "./Stepper";
 
@@ -63,10 +65,9 @@ function CartPanel({ onClose }: { onClose: () => void }) {
   const openState = useOpenState(checkout.hours, checkout.timeZone);
   const ids = useId();
 
-  const [customer, setCustomer] = useState<Customer>(() => {
-    const saved = parseCustomer(customerStore.getSnapshot());
-    return checkout.delivery ? saved : { ...saved, delivery: "recoger" };
-  });
+  const [customer, setCustomer] = useState<Customer>(() =>
+    parseCustomer(customerStore.getSnapshot()),
+  );
   const [comments, setComments] = useState("");
   const [tried, setTried] = useState(false);
   const [status, setStatus] = useState<"idle" | "sent" | "copied" | "copy-failed">("idle");
@@ -75,19 +76,28 @@ function CartPanel({ onClose }: { onClose: () => void }) {
   const update = (patch: Partial<Customer>) =>
     setCustomer((current) => ({ ...current, ...patch }));
 
+  // Para recoger en el local no se piden dirección ni barrio y no se cobra domicilio.
+  const delivering = customer.delivery === "domicilio";
   const nameInvalid = customer.name.trim().length < 2;
-  const addressInvalid =
-    customer.delivery === "domicilio" && customer.address.trim().length < 5;
+  const addressInvalid = delivering && customer.address.trim().length < 5;
   const canSend = count > 0;
+
+  // Barrio: si el restaurante cargó su lista, hay que reconocerlo para cobrar el domicilio.
+  const zones = checkout.zones;
+  const needsZone = delivering && zones.length > 0;
+  const match = useMemo(() => matchZone(customer.barrio, zones), [customer.barrio, zones]);
+  const zone = match.status === "ok" ? match.zone : null;
+  const barrioInvalid = needsZone && !zone;
+  const shipping = needsZone && zone ? { zone: zone.name, fee: zone.fee } : null;
+  const grandTotal = total + (shipping?.fee ?? 0);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!canSend) return;
-    if (nameInvalid || addressInvalid) {
+    if (nameInvalid || barrioInvalid || addressInvalid) {
       setTried(true);
-      document
-        .getElementById(`${ids}-${nameInvalid ? "name" : "address"}`)
-        ?.focus();
+      const first = nameInvalid ? "name" : barrioInvalid ? "barrio" : "address";
+      document.getElementById(`${ids}-${first}`)?.focus();
       return;
     }
 
@@ -96,6 +106,7 @@ function CartPanel({ onClose }: { onClose: () => void }) {
       lines,
       customer,
       comments,
+      shipping,
       timeZone: checkout.timeZone,
     });
 
@@ -120,9 +131,7 @@ function CartPanel({ onClose }: { onClose: () => void }) {
   };
 
   const deliveryOptions: { value: Delivery; label: string }[] = [
-    ...(checkout.delivery
-      ? [{ value: "domicilio" as const, label: "Domicilio" }]
-      : []),
+    { value: "domicilio", label: "Domicilio" },
     { value: "recoger", label: "Recoger en el local" },
   ];
 
@@ -282,9 +291,28 @@ function CartPanel({ onClose }: { onClose: () => void }) {
                     </label>
                   ))}
                 </div>
+                {!delivering && (
+                  <p className="mt-2 text-sm text-ink-soft">
+                    Pasas a recogerlo al restaurante: sin domicilio y sin dirección.
+                  </p>
+                )}
               </fieldset>
 
-              {customer.delivery === "domicilio" && (
+              {needsZone && (
+                <div className="mt-4">
+                  <BarrioField
+                    id={`${ids}-barrio`}
+                    value={customer.barrio}
+                    onChange={(barrio) => update({ barrio })}
+                    match={match}
+                    zones={zones}
+                    showError={tried}
+                    inputClass={inputClass}
+                  />
+                </div>
+              )}
+
+              {delivering && (
                 <div className="mt-4">
                   <label htmlFor={`${ids}-address`} className="text-sm font-bold">
                     Dirección de entrega
@@ -295,7 +323,7 @@ function CartPanel({ onClose }: { onClose: () => void }) {
                     onChange={(event) => update({ address: event.target.value })}
                     autoComplete="street-address"
                     maxLength={200}
-                    placeholder="Calle, número, barrio, apartamento"
+                    placeholder={needsZone ? "Calle, número, apartamento" : "Calle, número, barrio, apartamento"}
                     aria-invalid={tried && addressInvalid}
                     aria-describedby={tried && addressInvalid ? `${ids}-address-error` : undefined}
                     className={`${inputClass} ${tried && addressInvalid ? "border-red-600" : "border-line"}`}
@@ -397,14 +425,44 @@ function CartPanel({ onClose }: { onClose: () => void }) {
               </div>
             )}
 
-            <div className="flex items-baseline justify-between gap-3">
-              <p className="text-sm font-bold uppercase tracking-[0.16em] text-ink-soft">
-                Total · {count} {count === 1 ? "producto" : "productos"}
-              </p>
-              <p className="font-display text-4xl font-extrabold leading-none text-brand-700">
-                {formatCOP(total)}
-              </p>
-            </div>
+            <dl className="space-y-1.5">
+              {needsZone && (
+                <>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <dt className="text-sm font-bold uppercase tracking-[0.16em] text-ink-soft">
+                      Total factura · {count} {count === 1 ? "producto" : "productos"}
+                    </dt>
+                    <dd className="font-display text-2xl font-bold leading-none">{formatCOP(total)}</dd>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <dt className="text-sm font-bold uppercase tracking-[0.16em] text-ink-soft">
+                      Domicilio{zone ? ` · ${zone.name}` : ""}
+                    </dt>
+                    <dd
+                      className={
+                        zone
+                          ? "font-display text-2xl font-bold leading-none"
+                          : "text-sm font-semibold text-amber-800"
+                      }
+                    >
+                      {zone ? formatCOP(zone.fee) : "Falta el barrio"}
+                    </dd>
+                  </div>
+                </>
+              )}
+              <div
+                className={`flex items-baseline justify-between gap-3 ${needsZone ? "border-t border-line pt-2" : ""}`}
+              >
+                <dt className="text-sm font-bold uppercase tracking-[0.16em] text-ink-soft">
+                  {needsZone
+                    ? "Total a pagar"
+                    : `Total · ${count} ${count === 1 ? "producto" : "productos"}`}
+                </dt>
+                <dd className="font-display text-4xl font-extrabold leading-none text-brand-700">
+                  {formatCOP(grandTotal)}
+                </dd>
+              </div>
+            </dl>
 
             <button
               type="submit"

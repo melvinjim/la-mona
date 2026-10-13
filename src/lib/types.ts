@@ -88,6 +88,20 @@ export type Promo = {
   cta?: { label: string; href: string };
 };
 
+/** Barrio al que se hace domicilio y su valor fijo. Viene de la tabla `delivery_zones` de Supabase. */
+export type DeliveryZone = {
+  id: string;
+  name: string;
+  /** Valor del domicilio en COP. */
+  fee: number;
+};
+
+/**
+ * Qué se está viendo: "menu" es la carta del local (la del QR de las mesas, solo para ver);
+ * "domicilio" es la página para pedir a domicilio, con carrito y precios de domicilio.
+ */
+export type SiteMode = "menu" | "domicilio";
+
 export type SiteSettings = {
   name: string;
   fullName: string;
@@ -111,5 +125,10 @@ export type SiteSettings = {
   payments: string[];
   notAccepted?: string[];
   delivery: boolean;
+  /**
+   * Lo que cuesta de más cada producto en el menú de domicilios respecto al del local (COP).
+   * 0 o vacío = mismos precios.
+   */
+  deliverySurcharge?: number;
   promo?: Promo;
 };

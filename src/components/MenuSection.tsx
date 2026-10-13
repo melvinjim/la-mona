@@ -8,6 +8,7 @@ import type {
 } from "@/lib/types";
 import { AddButton, AddChip } from "./cart/AddButton";
 import { categoryIcons } from "./category-icons";
+import { ImageViewer } from "./ImageViewer";
 import { Price } from "./Price";
 
 function ItemRow({
@@ -25,7 +26,15 @@ function ItemRow({
   return (
     <li className="flex gap-3.5 py-2.5">
       {item.image && (
-        <div className="relative size-[4.5rem] shrink-0 self-center overflow-hidden rounded-2xl bg-sand">
+        <ImageViewer
+          src={item.image}
+          name={item.name}
+          price={price}
+          description={item.description}
+          soldOut={soldOut}
+          itemId={ordering ? item.id : undefined}
+          className="relative size-[4.5rem] shrink-0 cursor-zoom-in self-center overflow-hidden rounded-2xl bg-sand"
+        >
           <Image
             src={item.image}
             alt=""
@@ -33,7 +42,7 @@ function ItemRow({
             sizes="72px"
             className={`object-cover ${soldOut ? "grayscale" : ""}`}
           />
-        </div>
+        </ImageViewer>
       )}
       <div className="min-w-0 flex-1 self-center">
         <div className="flex items-baseline gap-2">

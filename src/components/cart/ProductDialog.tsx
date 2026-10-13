@@ -15,6 +15,7 @@ import {
 import { formatCOP } from "@/lib/format";
 import type { OptionGroup } from "@/lib/types";
 import { buttonClass } from "../button-styles";
+import { ImageViewer } from "../ImageViewer";
 import { Modal } from "../Modal";
 import { useCart } from "./cart-context";
 import { Stepper } from "./Stepper";
@@ -109,7 +110,14 @@ function ProductForm({
 
       <div className="min-h-0 flex-auto overflow-y-auto">
         {item.image && (
-          <div className="relative aspect-[16/9] bg-sand">
+          <ImageViewer
+            src={item.image}
+            name={item.name}
+            price={item.price}
+            description={item.description}
+            className="relative block aspect-[16/9] w-full cursor-zoom-in bg-sand"
+            hint="Ver completa"
+          >
             <Image
               src={item.image}
               alt=""
@@ -117,7 +125,7 @@ function ProductForm({
               sizes="(min-width: 640px) 512px, 100vw"
               className="object-cover"
             />
-          </div>
+          </ImageViewer>
         )}
 
         <div className="px-5 pb-5 pt-6 sm:px-7">

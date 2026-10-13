@@ -17,6 +17,9 @@ const variants = {
   /** Ventana centrada. */
   center:
     "anim-pop inset-0 m-auto h-fit max-h-[94dvh] w-[min(92vw,30rem)] rounded-[1.75rem]",
+  /** Ventana centrada y más ancha, para ver fotos grandes. */
+  photo:
+    "anim-pop inset-0 m-auto h-fit max-h-[94dvh] w-[min(94vw,46rem)] rounded-[1.75rem]",
 } as const;
 
 type Props = {

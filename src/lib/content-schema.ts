@@ -210,6 +210,7 @@ export function sanitizeSite(raw: unknown, fallback: SiteSettings): SiteSettings
     chatMessage: filled(raw.chatMessage) ?? fallback.chatMessage,
     phone: filled(raw.phone),
     address: filled(raw.address),
+    city: filled(raw.city),
     mapsUrl: filled(raw.mapsUrl),
     hours: open && close ? { open, close } : fallback.hours,
     timeZone: validTimeZone(raw.timeZone) ?? fallback.timeZone,

@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { InstagramIcon } from "@/components/brand-icons";
 import { OpenStatus } from "@/components/OpenStatus";
+import { RestaurantSchema } from "@/components/RestaurantSchema";
 import { getSite } from "@/lib/content";
 
 // La página se regenera sola cada 10 minutos; con el panel administrativo se actualiza al instante.
@@ -94,6 +95,7 @@ export default async function Home() {
 
   return (
     <main className="relative isolate flex min-h-dvh flex-col overflow-hidden bg-brand-500 text-ink">
+      <RestaurantSchema site={site} />
       {/* Decoración: textura de puntos y círculos de color */}
       <div
         aria-hidden="true"

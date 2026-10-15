@@ -79,6 +79,14 @@ export function SiteForm({ site }: { site: SiteSettings }) {
               className={inputClass}
             />
           </Field>
+          <Field label="Ciudad" hint="Sale en el título que muestra Google.">
+            <input
+              name="city"
+              defaultValue={old.text("city", site.city)}
+              placeholder="Barranquilla"
+              className={inputClass}
+            />
+          </Field>
           <div className="sm:col-span-2">
             <Field label="Enlace de Google Maps">
               <input

@@ -101,6 +101,8 @@ export type SiteSettings = {
   chatMessage: string;
   phone?: string;
   address?: string;
+  /** Ciudad del local. Va en el título que se ve en Google y en los datos del negocio. */
+  city?: string;
   /** Enlace de Google Maps del local. */
   mapsUrl?: string;
   /** Horario en formato 24 h. Si `close` es menor que `open`, cierra al día siguiente. */

@@ -197,6 +197,7 @@ export async function saveSite(
     chatMessage: text(form, "chatMessage") || current.chatMessage,
     phone: optional(form, "phone"),
     address: optional(form, "address"),
+    city: optional(form, "city"),
     mapsUrl: optional(form, "mapsUrl"),
     hours: { open, close },
     timeZone: text(form, "timeZone") || current.timeZone,

@@ -18,11 +18,14 @@ const body = Figtree({
 
 export async function generateMetadata(): Promise<Metadata> {
   const site = await getSite();
-  const title = `${site.fullName} | Menú para llevar y domicilios`;
+  // La ciudad va en el título porque casi todas las búsquedas la llevan ("restaurante en X").
+  const brand = site.city ? `${site.fullName} ${site.city}` : site.fullName;
+  const title = `${brand} | Menú, domicilios y precios`;
 
   return {
     metadataBase: new URL(siteUrl),
-    title: { default: title, template: `%s | ${site.fullName}` },
+    title: { default: title, template: `%s | ${brand}` },
+    alternates: { canonical: "/" },
     description: site.description,
     applicationName: site.fullName,
     openGraph: {

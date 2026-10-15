@@ -19,6 +19,7 @@ export const site: SiteSettings = {
   phone: "",
   // Verificar la dirección exacta: Google la muestra como el cruce ("Cl. 47b & Cra. 22").
   address: "Calle 47B #22-02, Barranquilla",
+  city: "Barranquilla",
   // Enlace por identificador del lugar: abre la ficha del restaurante en Google Maps.
   mapsUrl: "https://maps.google.com/?cid=15158603491002946303",
 

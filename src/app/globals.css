@@ -160,6 +160,23 @@ body {
   outline-offset: 2px;
 }
 
+/*
+ * Campos de hora y fecha.
+ *
+ * El Safari del iPhone los dibuja como un control propio con su ancho mínimo, y ese ancho gana
+ * sobre el del formulario: los dos campos del horario se salían del recuadro de la tarjeta.
+ * Quitarles la apariencia nativa los deja comportarse como cualquier otro campo. El selector
+ * de hora del sistema se sigue abriendo al tocarlos.
+ */
+input[type="time"],
+input[type="date"],
+input[type="datetime-local"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+}
+
 /* En los campos de texto basta con el color del borde; la ventana en sí no lleva marco. */
 input:focus-visible,
 textarea:focus-visible,

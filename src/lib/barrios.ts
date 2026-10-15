@@ -226,6 +226,75 @@ export function matchZone(input: string, zones: readonly DeliveryZone[]): ZoneMa
 }
 
 /* ------------------------------------------------------------------ */
+/* Lista que se filtra mientras el cliente escribe                     */
+/* ------------------------------------------------------------------ */
+
+type Ranked = { zone: DeliveryZone; rank: number; extra: number };
+
+/** Qué tanto se parece un barrio a lo escrito. `rank` 0 es lo más parecido; null es que no. */
+function rankZone(query: Keys, zone: DeliveryZone): Ranked | null {
+  const target = zoneKeys(zone);
+  const extra = Math.abs(target.plain.length - query.plain.length);
+
+  /*
+   * Comparar por cómo suena solo tiene sentido con tres sonidos o más. "zzz" suena "s", y con
+   * un solo sonido entraría cualquier barrio que lleve una s. Con menos, se compara tal cual
+   * se escribió: así "r" sigue mostrando los barrios con r y "zzz" no muestra ninguno.
+   */
+  const bySound = query.full.length >= 3;
+
+  // Empieza igual: "reb" -> "Rebolo".
+  if (target.plain.startsWith(query.plain) || (bySound && target.full.startsWith(query.full))) {
+    return { zone, rank: 0, extra };
+  }
+  // Alguna de sus palabras empieza igual: "nieves" -> "Las Nieves".
+  const startsWord = words(zone.name).some((word) =>
+    bySound ? sound(word).startsWith(query.full) : word.startsWith(query.plain),
+  );
+  if (startsWord) return { zone, rank: 1, extra };
+
+  // Lo escrito está en alguna parte del nombre.
+  if (target.plain.includes(query.plain) || (bySound && target.full.includes(query.full))) {
+    return { zone, rank: 2, extra };
+  }
+  if (!bySound) return null;
+
+  // Escrito con errores: se compara por cómo suena ("rebollo" -> "Rebolo").
+  const sounded = Math.min(
+    distance(query.full, target.full),
+    distance(query.core, target.core),
+  );
+  return sounded <= tolerance(Math.max(query.full.length, target.full.length))
+    ? { zone, rank: 3, extra: sounded }
+    : null;
+}
+
+/**
+ * Barrios que se parecen a lo que el cliente lleva escrito, para la lista que se filtra sola
+ * mientras escribe. Van primero los que empiezan igual, después los que lo contienen y de
+ * últimos los que suenan parecido. Sin nada escrito no se muestra nada.
+ */
+export function searchZones(
+  input: string,
+  zones: readonly DeliveryZone[],
+  limit = 8,
+): DeliveryZone[] {
+  const query = keysOf(input);
+  if (query.plain.length === 0) return [];
+
+  return zones
+    .flatMap((zone) => rankZone(query, zone) ?? [])
+    .sort(
+      (a, b) =>
+        a.rank - b.rank ||
+        a.extra - b.extra ||
+        a.zone.name.localeCompare(b.zone.name, "es"),
+    )
+    .slice(0, limit)
+    .map((entry) => entry.zone);
+}
+
+/* ------------------------------------------------------------------ */
 /* Lista de barrios en texto (para el panel)                           */
 /* ------------------------------------------------------------------ */
 

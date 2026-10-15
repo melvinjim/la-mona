@@ -2,7 +2,7 @@
 
 import { Check, Copy, ShoppingBag, Trash2, TriangleAlert, X } from "lucide-react";
 import { useId, useState, type FormEvent } from "react";
-import { matchZone, type ZoneMatch } from "@/lib/barrios";
+import { matchZone } from "@/lib/barrios";
 import { optionLabel, type ResolvedLine } from "@/lib/cart";
 import { formatCOP, formatTimeWithArticle } from "@/lib/format";
 import { customerStore } from "@/lib/local-store";
@@ -94,29 +94,33 @@ function CartPanel({ onClose }: { onClose: () => void }) {
     const saved = matchZone(parseCustomer(customerStore.getSnapshot()).barrio, checkout.zones);
     return saved.status === "ok" && saved.exact ? saved.zone.id : null;
   });
-  const [attempt, setAttempt] = useState<ZoneMatch | null>(null);
+  // Se intentó enviar con un barrio que no está en la zona de domicilios.
+  const [notFound, setNotFound] = useState(false);
   const validated = hasZones ? (zones.find((entry) => entry.id === validatedId) ?? null) : null;
 
   const pickZone = (zone: DeliveryZone) => {
     setValidatedId(zone.id);
-    setAttempt(null);
+    setNotFound(false);
     update({ barrio: zone.name });
   };
-  /** Reconoce el barrio escrito. Devuelve el barrio si se entendió; si no, muestra opciones o el error. */
-  const validate = (): DeliveryZone | null => {
+  /**
+   * Red de seguridad al enviar: si escribió el nombre completo y no llegó a tocarlo en la lista,
+   * se da por elegido igual, siempre que no haya duda de cuál es.
+   */
+  const resolveBarrio = (): DeliveryZone | null => {
     const result = matchZone(customer.barrio, zones);
     if (result.status === "ok") {
       pickZone(result.zone);
       return result.zone;
     }
     setValidatedId(null);
-    setAttempt(result);
+    setNotFound(true);
     return null;
   };
   const changeBarrio = (barrio: string) => {
     update({ barrio });
     setValidatedId(null);
-    setAttempt(null);
+    setNotFound(false);
   };
 
   const nameInvalid = customer.name.trim().length < 2;
@@ -130,8 +134,8 @@ function CartPanel({ onClose }: { onClose: () => void }) {
     event.preventDefault();
     if (!canSend) return;
 
-    // Si el cliente no tocó "Validar", se valida el barrio aquí mismo antes de enviar.
-    const zone = validated ?? (delivering && hasZones && !barrioMissing ? validate() : null);
+    // Si no llegó a tocar su barrio en la lista, se intenta reconocer aquí mismo.
+    const zone = validated ?? (delivering && hasZones && !barrioMissing ? resolveBarrio() : null);
     const barrioInvalid = delivering && (barrioMissing || (hasZones && !zone));
     if (nameInvalid || barrioInvalid || addressInvalid) {
       setTried(true);
@@ -345,12 +349,12 @@ function CartPanel({ onClose }: { onClose: () => void }) {
                     id={`${ids}-barrio`}
                     value={customer.barrio}
                     onChange={changeBarrio}
-                    onValidate={() => validate()}
                     onPick={pickZone}
                     hasZones={hasZones}
+                    zones={zones}
                     validated={validated}
-                    attempt={attempt}
                     showError={tried}
+                    notFound={notFound}
                     inputClass={inputClass}
                   />
                 </div>
@@ -489,7 +493,7 @@ function CartPanel({ onClose }: { onClose: () => void }) {
                           : "text-sm font-semibold text-amber-800"
                       }
                     >
-                      {validated ? formatCOP(validated.fee) : "Falta validar el barrio"}
+                      {validated ? formatCOP(validated.fee) : "Falta elegir el barrio"}
                     </dd>
                   </div>
                 </>

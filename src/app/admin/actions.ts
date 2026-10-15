@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { parseZoneLines, planZoneSync, type StoredZone } from "@/lib/barrios";
+import { MIN_FEE, parseZoneLines, planZoneSync, type StoredZone } from "@/lib/barrios";
 import { fileContent, getMenu, getSite } from "@/lib/content";
 import { sanitizeIncludes, sanitizeOptionGroups } from "@/lib/content-schema";
 import { formatCOP } from "@/lib/format";
@@ -247,18 +247,33 @@ function zonesProblem(message: string) {
  * Deja la tabla `delivery_zones` igual a la lista escrita en el panel: agrega los barrios nuevos,
  * actualiza los que cambiaron de valor y quita los que ya no están.
  */
-export async function saveZones(
+/** Quien no tenga sesión no toca nada. Devuelve el cliente listo, o el mensaje de rechazo. */
+async function adminClient(form: FormData) {
+  const supabase = await serverClient();
+  const { data: session } = await supabase.auth.getUser();
+  return session.user ? supabase : fail(form, "Tu sesión se cerró. Vuelve a entrar.");
+}
+
+const isState = (value: unknown): value is FormState =>
+  typeof value === "object" && value !== null && !("from" in value);
+
+/**
+ * Carga una lista pegada de barrios: agrega los que faltan y actualiza el valor de los que ya
+ * están. **No borra nada**: lo que no venga en la lista se queda como estaba, porque antes
+ * quitar una línea sin darse cuenta borraba ese barrio de la base de datos.
+ */
+export async function importZones(
   _previous: FormState,
   form: FormData,
 ): Promise<FormState> {
-  const supabase = await serverClient();
-  const { data: session } = await supabase.auth.getUser();
-  if (!session.user) return fail(form, "Tu sesión se cerró. Vuelve a entrar.");
+  const supabase = await adminClient(form);
+  if (isState(supabase)) return supabase;
 
   const { zones: desired, errors } = parseZoneLines(String(form.get("zones") ?? ""));
   if (errors.length > 0) {
     return fail(form, `No se guardó nada. Revisa estos barrios: ${errors.join(" ")}`);
   }
+  if (desired.length === 0) return fail(form, "No había ningún barrio en la lista.");
 
   const { data: current, error: readError } = await supabase
     .from("delivery_zones")
@@ -267,10 +282,6 @@ export async function saveZones(
 
   const plan = planZoneSync((current ?? []) as StoredZone[], desired);
 
-  if (plan.deleteIds.length > 0) {
-    const { error } = await supabase.from("delivery_zones").delete().in("id", plan.deleteIds);
-    if (error) return fail(form, zonesProblem(error.message));
-  }
   if (plan.updates.length > 0) {
     const { error } = await supabase
       .from("delivery_zones")
@@ -283,8 +294,107 @@ export async function saveZones(
   }
 
   revalidatePath("/", "layout");
+  const kept = plan.deleteIds.length;
   return {
-    ok: `Listo: ${desired.length} barrios guardados (${plan.inserts.length} nuevos, ${plan.updates.length} cambiados, ${plan.deleteIds.length} quitados). Ya están en el sitio.`,
+    ok:
+      `Listo: ${plan.inserts.length} barrios nuevos y ${plan.updates.length} actualizados.` +
+      (kept > 0 ? ` Los otros ${kept} que ya tenías se quedaron como estaban.` : ""),
+  };
+}
+
+/** Cambia el nombre o el valor de un solo barrio. */
+export async function saveZone(
+  _previous: FormState,
+  form: FormData,
+): Promise<FormState> {
+  const supabase = await adminClient(form);
+  if (isState(supabase)) return supabase;
+
+  const id = text(form, "zoneId");
+  const name = text(form, "name");
+  const fee = money(form, "fee");
+
+  if (!id) return fail(form, "Ese barrio ya no existe. Recarga la página.");
+  if (!name) return fail(form, "El barrio necesita un nombre.");
+  if (fee === undefined || fee < MIN_FEE) {
+    return fail(form, `El valor del domicilio va completo, por ejemplo ${formatCOP(5000)}.`);
+  }
+
+  const { error } = await supabase.from("delivery_zones").update({ name, fee }).eq("id", id);
+  if (error) {
+    return fail(
+      form,
+      error.code === "23505"
+        ? `Ya tienes otro barrio llamado "${name}".`
+        : zonesProblem(error.message),
+    );
+  }
+
+  revalidatePath("/", "layout");
+  return { ok: `"${name}" quedó en ${formatCOP(fee)}.` };
+}
+
+/** Quita un barrio. El panel pregunta antes. */
+export async function deleteZone(
+  _previous: FormState,
+  form: FormData,
+): Promise<FormState> {
+  const supabase = await adminClient(form);
+  if (isState(supabase)) return supabase;
+
+  const id = text(form, "zoneId");
+  if (!id) return fail(form, "Ese barrio ya no existe. Recarga la página.");
+
+  const { error } = await supabase.from("delivery_zones").delete().eq("id", id);
+  if (error) return fail(form, zonesProblem(error.message));
+
+  revalidatePath("/", "layout");
+  return { ok: `"${text(form, "name") || "El barrio"}" se quitó de la lista.` };
+}
+
+/**
+ * Le suma el mismo valor al domicilio de varios barrios.
+ *
+ * Lo hace la función `raise_delivery_fees` de la base de datos, en una sola sentencia: o entra
+ * para todos o no entra para nadie, y como suma sobre el valor que haya en ese momento, no pisa
+ * un cambio que alguien haya hecho mientras tanto.
+ */
+export async function raiseZoneFees(
+  _previous: FormState,
+  form: FormData,
+): Promise<FormState> {
+  const supabase = await adminClient(form);
+  if (isState(supabase)) return supabase;
+
+  const amount = money(form, "amount");
+  if (amount === undefined || amount <= 0) {
+    return fail(form, "Escribe cuánto subirle a cada barrio, por ejemplo 1000.");
+  }
+
+  const ids = text(form, "ids")
+    .split(",")
+    .map((id) => Number(id.trim()))
+    .filter((id) => Number.isInteger(id) && id > 0);
+  if (ids.length === 0) return fail(form, "Primero marca los barrios a los que subirles.");
+
+  const { data, error } = await supabase.rpc("raise_delivery_fees", {
+    zone_ids: ids,
+    amount,
+  });
+  if (error) {
+    // PGRST202: la función todavía no existe en la base de datos.
+    return fail(
+      form,
+      error.code === "PGRST202" || /raise_delivery_fees/.test(error.message)
+        ? "Falta crear la función de aumento en Supabase. Corre la actualización del SQL que sale arriba y recarga la página."
+        : zonesProblem(error.message),
+    );
+  }
+
+  const changed = typeof data === "number" ? data : ids.length;
+  revalidatePath("/", "layout");
+  return {
+    ok: `Listo: ${formatCOP(amount)} más en ${changed} ${changed === 1 ? "barrio" : "barrios"}. Ya está en el sitio.`,
   };
 }
 

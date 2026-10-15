@@ -229,10 +229,10 @@ export function matchZone(input: string, zones: readonly DeliveryZone[]): ZoneMa
 /* Lista que se filtra mientras el cliente escribe                     */
 /* ------------------------------------------------------------------ */
 
-type Ranked = { zone: DeliveryZone; rank: number; extra: number };
+type Ranked<T> = { zone: T; rank: number; extra: number };
 
 /** Qué tanto se parece un barrio a lo escrito. `rank` 0 es lo más parecido; null es que no. */
-function rankZone(query: Keys, zone: DeliveryZone): Ranked | null {
+function rankZone<T extends DeliveryZone>(query: Keys, zone: T): Ranked<T> | null {
   const target = zoneKeys(zone);
   const extra = Math.abs(target.plain.length - query.plain.length);
 
@@ -274,11 +274,11 @@ function rankZone(query: Keys, zone: DeliveryZone): Ranked | null {
  * mientras escribe. Van primero los que empiezan igual, después los que lo contienen y de
  * últimos los que suenan parecido. Sin nada escrito no se muestra nada.
  */
-export function searchZones(
+export function searchZones<T extends DeliveryZone>(
   input: string,
-  zones: readonly DeliveryZone[],
+  zones: readonly T[],
   limit = 8,
-): DeliveryZone[] {
+): T[] {
   const query = keysOf(input);
   if (query.plain.length === 0) return [];
 
@@ -308,7 +308,7 @@ function parseFee(raw: string): number {
   return Number(withoutCents.replace(/\D/g, ""));
 }
 
-const MIN_FEE = 100;
+export const MIN_FEE = 100;
 
 /**
  * Lee una lista de barrios, una por línea, con el nombre y el valor separados por guion,

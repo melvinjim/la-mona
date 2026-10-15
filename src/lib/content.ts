@@ -75,6 +75,67 @@ export async function getZoneList(): Promise<{ zones: DeliveryZone[]; state: Zon
 
 export const getZones = async () => (await getZoneList()).zones;
 
+/** Un barrio como lo ve el panel: con la fecha del último cambio, si la tabla la guarda. */
+export type AdminZone = DeliveryZone & { updatedAt: string | null };
+
+export type AdminZones = {
+  zones: AdminZone[];
+  state: ZonesState;
+  /** La tabla viene de una versión anterior y le falta `updated_at` y la función de aumento. */
+  needsUpgrade: boolean;
+};
+
+/**
+ * Los barrios para administrarlos. Pide también la fecha del último cambio y, si la tabla
+ * todavía no tiene esa columna, lo vuelve a pedir sin ella y avisa: así una instalación vieja
+ * sigue funcionando mientras no se corra la actualización del SQL.
+ */
+export async function getAdminZones(): Promise<AdminZones> {
+  if (!supabaseReady) return { zones: [], state: "sin-supabase", needsUpgrade: false };
+
+  const ask = (withDate: boolean) =>
+    publicClient()
+      .from("delivery_zones")
+      .select(withDate ? "id,name,fee,updated_at" : "id,name,fee")
+      .order("name");
+
+  try {
+    let needsUpgrade = false;
+    let { data, error } = await ask(true);
+
+    // 42703 / PGRST204: la columna no existe todavía.
+    if (error && (error.code === "42703" || error.code === "PGRST204")) {
+      needsUpgrade = true;
+      ({ data, error } = await ask(false));
+    }
+
+    if (error) {
+      const missing = error.code === "PGRST205" || error.code === "42P01";
+      if (!missing) console.error("[content] No se pudieron leer los barrios:", error);
+      return { zones: [], state: missing ? "falta-tabla" : "error", needsUpgrade: false };
+    }
+
+    const rows = (data ?? []) as unknown as {
+      id: number | string;
+      name: string;
+      fee: number;
+      updated_at?: string;
+    }[];
+
+    // Por id y no por posición: una fila con el nombre vacío se descarta al validarla y
+    // emparejar por índice correría todas las fechas una casilla.
+    const dates = new Map(rows.map((row) => [String(row.id), row.updated_at ?? null]));
+    const zones = sanitizeZones(rows.map((row) => ({ ...row, id: String(row.id) }))).map(
+      (zone) => ({ ...zone, updatedAt: dates.get(zone.id) ?? null }),
+    );
+
+    return { zones, state: "ok", needsUpgrade };
+  } catch (error) {
+    console.error("[content] No se pudieron leer los barrios:", error);
+    return { zones: [], state: "error", needsUpgrade: false };
+  }
+}
+
 /** De dónde salió cada cosa. Lo usa el panel para avisar si todavía no hay nada guardado. */
 export async function getContentSources(): Promise<
   Record<ContentKey, ContentSource>

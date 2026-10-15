@@ -14,6 +14,8 @@ type Props = {
   /** Precio del que parten los botones si el campo está vacío (ej. el de la categoría). */
   startFrom?: number;
   step?: number;
+  /** Avisa el valor mientras se escribe, para quien necesite mostrarlo antes de guardar. */
+  onValueChange?: (digits: string) => void;
 };
 
 const button =
@@ -27,11 +29,17 @@ export function PriceField({
   placeholder = "0",
   startFrom = 0,
   step = 500,
+  onValueChange,
 }: Props) {
   const [digits, setDigits] = useState(String(defaultValue ?? "").replace(/\D/g, ""));
 
+  const write = (value: string) => {
+    setDigits(value);
+    onValueChange?.(value);
+  };
+
   const current = digits === "" ? startFrom : Number(digits);
-  const bump = (delta: number) => setDigits(String(Math.max(0, current + delta)));
+  const bump = (delta: number) => write(String(Math.max(0, current + delta)));
 
   return (
     <div className="flex items-center gap-1.5" role="group" aria-label={`Precio: ${label}`}>
@@ -51,7 +59,7 @@ export function PriceField({
         placeholder={placeholder}
         aria-label={`Precio de ${label}`}
         onFocus={(event) => event.target.select()}
-        onChange={(event) => setDigits(event.target.value.replace(/\D/g, "").slice(0, 7))}
+        onChange={(event) => write(event.target.value.replace(/\D/g, "").slice(0, 7))}
         className={`${inputClass} min-w-0 text-center font-bold tabular-nums`}
       />
       <button

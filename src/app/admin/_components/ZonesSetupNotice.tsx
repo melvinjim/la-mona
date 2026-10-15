@@ -1,5 +1,5 @@
 import type { ZonesState } from "@/lib/content";
-import { ZONES_SQL } from "@/lib/zones-sql";
+import { ZONES_SQL, ZONES_UPGRADE_SQL } from "@/lib/zones-sql";
 import { Card } from "./ui";
 
 /** Se muestra en lugar de la lista de barrios cuando la tabla no existe o no se pudo leer. */
@@ -29,6 +29,33 @@ export function ZonesSetupNotice({ state }: { state: ZonesState }) {
       </ol>
       <pre className="mt-3 max-h-80 overflow-auto rounded-xl bg-ink p-3.5 text-xs leading-relaxed text-white">
         <code>{ZONES_SQL}</code>
+      </pre>
+    </Card>
+  );
+}
+
+/**
+ * La tabla existe pero viene de una versión anterior: le falta la fecha del último cambio y la
+ * función que sube varias tarifas de una vez. Se puede seguir usando el panel mientras tanto.
+ */
+export function ZonesUpgradeNotice() {
+  return (
+    <Card
+      title="Falta actualizar la tabla de barrios"
+      description="Tu tabla se creó con una versión anterior. Sin esto no se ve cuándo cambió cada barrio ni se pueden subir varios domicilios a la vez."
+    >
+      <ol className="list-decimal space-y-2 pl-5 text-sm text-ink-soft">
+        <li>
+          En Supabase abre <strong className="text-ink">SQL Editor → New query</strong>.
+        </li>
+        <li>
+          Pega este código y pulsa <strong className="text-ink">Run</strong>. No borra nada: solo
+          agrega lo que falta.
+        </li>
+        <li>Vuelve aquí y recarga la página.</li>
+      </ol>
+      <pre className="mt-3 max-h-72 overflow-auto rounded-xl bg-ink p-3.5 text-xs leading-relaxed text-white">
+        <code>{ZONES_UPGRADE_SQL}</code>
       </pre>
     </Card>
   );

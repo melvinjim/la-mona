@@ -27,4 +27,105 @@ create policy "delivery_zones: escritura del administrador"
   with check (true);
 
 grant select on public.delivery_zones to anon, authenticated;
-grant insert, update, delete on public.delivery_zones to authenticated;`;
+grant insert, update, delete on public.delivery_zones to authenticated;
+
+-- Cuándo se tocó cada barrio por última vez (columna "Última actualización" del panel).
+alter table public.delivery_zones
+  add column if not exists updated_at timestamptz not null default now();
+
+create or replace function public.touch_delivery_zone()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists delivery_zones_touch on public.delivery_zones;
+create trigger delivery_zones_touch
+  before update on public.delivery_zones
+  for each row execute function public.touch_delivery_zone();
+
+-- Subir el domicilio de varios barrios de una sola vez.
+--
+-- Va como función porque desde el panel no se pueden encadenar varias sentencias en una
+-- transacción: así el aumento es una sola sentencia, o entra para todos o no entra para nadie.
+-- Y como suma sobre el valor que haya en ese momento, si alguien cambió una tarifa entre la
+-- vista previa y la confirmación, el aumento se le aplica igual sin pisar su cambio.
+create or replace function public.raise_delivery_fees(zone_ids bigint[], amount integer)
+returns integer
+language plpgsql
+security invoker            -- respeta los permisos de quien llama: solo el administrador
+as $$
+declare
+  changed integer;
+begin
+  if amount is null or amount <= 0 then
+    raise exception 'El valor a sumar tiene que ser mayor que cero';
+  end if;
+
+  update public.delivery_zones
+     set fee = fee + amount
+   where id = any(zone_ids);
+
+  get diagnostics changed = row_count;
+  return changed;
+end;
+$$;
+
+grant execute on function public.raise_delivery_fees(bigint[], integer) to authenticated;`;
+
+/**
+ * Lo que hay que agregar si la tabla de barrios se creó con una versión anterior: la fecha de
+ * la última actualización y la función que sube varias tarifas de una sola vez. El panel lo
+ * muestra solo cuando falta.
+ */
+export const ZONES_UPGRADE_SQL = `-- Cuándo se tocó cada barrio por última vez (columna "Última actualización" del panel).
+alter table public.delivery_zones
+  add column if not exists updated_at timestamptz not null default now();
+
+create or replace function public.touch_delivery_zone()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists delivery_zones_touch on public.delivery_zones;
+create trigger delivery_zones_touch
+  before update on public.delivery_zones
+  for each row execute function public.touch_delivery_zone();
+
+-- Subir el domicilio de varios barrios de una sola vez.
+--
+-- Va como función porque desde el panel no se pueden encadenar varias sentencias en una
+-- transacción: así el aumento es una sola sentencia, o entra para todos o no entra para nadie.
+-- Y como suma sobre el valor que haya en ese momento, si alguien cambió una tarifa entre la
+-- vista previa y la confirmación, el aumento se le aplica igual sin pisar su cambio.
+create or replace function public.raise_delivery_fees(zone_ids bigint[], amount integer)
+returns integer
+language plpgsql
+security invoker            -- respeta los permisos de quien llama: solo el administrador
+as $$
+declare
+  changed integer;
+begin
+  if amount is null or amount <= 0 then
+    raise exception 'El valor a sumar tiene que ser mayor que cero';
+  end if;
+
+  update public.delivery_zones
+     set fee = fee + amount
+   where id = any(zone_ids);
+
+  get diagnostics changed = row_count;
+  return changed;
+end;
+$$;
+
+grant execute on function public.raise_delivery_fees(bigint[], integer) to authenticated;`;

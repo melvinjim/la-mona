@@ -1,17 +1,28 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Pencil, Search, Trash2, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Coins,
+  ListFilter,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { searchZones } from "@/lib/barrios";
-import { formatCOP } from "@/lib/format";
 import type { AdminZone } from "@/lib/content";
-import { deleteZone, raiseZoneFees, saveZone, type FormState } from "../actions";
+import { formatCOP } from "@/lib/format";
+import { addZone, deleteZone, raiseZoneFees, saveZone, type FormState } from "../actions";
 import { ConfirmAction } from "./ConfirmAction";
 import { PriceField } from "./PriceField";
 import { SubmitButton } from "./SubmitButton";
 import { Alert, Card, inputClass, labelClass } from "./ui";
 
-const PER_PAGE = 12;
+const PER_PAGE = 10;
 
 type Sort = "nombre" | "barato" | "caro" | "reciente";
 
@@ -24,16 +35,44 @@ const SORTS: { value: Sort; label: string }[] = [
 
 const shortDate = (value: string | null) =>
   value
-    ? new Date(value).toLocaleDateString("es-CO", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })
+    ? new Date(value).toLocaleDateString("es-CO", { day: "numeric", month: "short" })
     : "—";
+
+/** Botón que abre y cierra una parte de la pantalla. En computador no hace falta: cabe todo. */
+function Fold({
+  icon: Icon,
+  label,
+  open,
+  onToggle,
+}: {
+  icon: typeof Coins;
+  label: string;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={open}
+      className="flex w-full items-center gap-2 rounded-xl px-1 py-2 text-left font-display text-lg font-bold uppercase tracking-wide lg:hidden"
+    >
+      <Icon className="size-5 shrink-0 text-brand-700" aria-hidden="true" />
+      <span className="flex-1">{label}</span>
+      <ChevronDown
+        aria-hidden="true"
+        className={`size-5 shrink-0 text-ink-soft transition ${open ? "rotate-180" : ""}`}
+      />
+    </button>
+  );
+}
 
 /* ------------------------------------------------------------------ */
 /* Una fila                                                            */
 /* ------------------------------------------------------------------ */
+
+const iconButton =
+  "grid size-10 shrink-0 place-items-center rounded-full transition hover:bg-brand-50";
 
 function ZoneRow({
   zone,
@@ -58,7 +97,7 @@ function ZoneRow({
 
   if (editing) {
     return (
-      <li className="border-b border-line p-3 last:border-b-0">
+      <li className="border-b border-line bg-brand-50/50 p-3 last:border-b-0">
         <form action={save} className="space-y-3">
           <input type="hidden" name="zoneId" value={zone.id} />
           <div className="grid gap-2.5 sm:grid-cols-[1fr_13rem]">
@@ -91,7 +130,7 @@ function ZoneRow({
   }
 
   return (
-    <li className="flex items-center gap-3 border-b border-line px-3 py-2.5 last:border-b-0">
+    <li className="flex items-center gap-2.5 border-b border-line px-3 py-2 last:border-b-0">
       <input
         type="checkbox"
         checked={checked}
@@ -103,38 +142,99 @@ function ZoneRow({
       <span className="shrink-0 font-display text-lg font-bold text-brand-700">
         {formatCOP(zone.fee)}
       </span>
-      <span className="hidden w-28 shrink-0 text-right text-xs text-ink-soft sm:block">
+      <span className="hidden w-16 shrink-0 text-right text-xs text-ink-soft sm:max-lg:block xl:block">
         {shortDate(zone.updatedAt)}
       </span>
-      <span className="flex shrink-0 items-center gap-1">
-        <button
-          type="button"
-          onClick={() => onEdit(true)}
-          aria-label={`Editar ${zone.name}`}
-          className="grid size-10 place-items-center rounded-full border border-line transition hover:border-brand-400"
+      <button
+        type="button"
+        onClick={() => onEdit(true)}
+        aria-label={`Editar ${zone.name}`}
+        className={`${iconButton} text-ink-soft hover:text-brand-700`}
+      >
+        <Pencil className="size-4" aria-hidden="true" />
+      </button>
+      <form action={remove} className="shrink-0">
+        <input type="hidden" name="zoneId" value={zone.id} />
+        <input type="hidden" name="name" value={zone.name} />
+        <ConfirmAction
+          intent="delete"
+          label={`Quitar ${zone.name}`}
+          question={`¿Quitar "${zone.name}" de los barrios con domicilio?`}
+          confirmLabel="Sí, quitarlo"
+          className={`${iconButton} text-red-600 hover:bg-red-50`}
         >
-          <Pencil className="size-4" aria-hidden="true" />
-        </button>
-        <form action={remove}>
-          <input type="hidden" name="zoneId" value={zone.id} />
-          <input type="hidden" name="name" value={zone.name} />
-          <ConfirmAction
-            intent="delete"
-            label={`Quitar ${zone.name}`}
-            question={`¿Quitar "${zone.name}" de los barrios con domicilio?`}
-            confirmLabel="Sí, quitarlo"
-            className="grid size-10 place-items-center rounded-full border border-red-200 text-red-700 transition hover:bg-red-50"
-          >
-            <Trash2 className="size-4" aria-hidden="true" />
-          </ConfirmAction>
-        </form>
-      </span>
+          <Trash2 className="size-4" aria-hidden="true" />
+        </ConfirmAction>
+      </form>
       {removed.error && (
         <span className="sr-only" role="status">
           {removed.error}
         </span>
       )}
     </li>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Agregar uno                                                         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Alta de un barrio. Después de agregar no se cierra: así se pueden meter varios seguidos, que
+ * es justo lo que se hace al montar la lista por primera vez.
+ */
+function AddZone() {
+  const [state, action] = useActionState<FormState, FormData>(addZone, {});
+  const [open, setOpen] = useState(false);
+
+  if (!open) {
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="inline-flex items-center gap-2 rounded-full border-2 border-line px-4 py-2.5 text-sm font-bold transition hover:border-brand-400"
+        >
+          <Plus className="size-4 text-brand-700" aria-hidden="true" />
+          Agregar barrio
+        </button>
+        {state.ok && <Alert state={state} />}
+      </div>
+    );
+  }
+
+  return (
+    <form action={action} className="space-y-3 rounded-xl border-2 border-brand-200 bg-brand-50/60 p-3">
+      <div className="grid gap-2.5 sm:grid-cols-[1fr_13rem]">
+        <label className="block min-w-0">
+          <span className={labelClass}>Barrio</span>
+          <input
+            name="name"
+            autoFocus
+            placeholder="Ej: San Isidro"
+            className={`${inputClass} mt-1.5`}
+          />
+        </label>
+        <div className="min-w-0">
+          <span className={labelClass}>Valor del domicilio</span>
+          <div className="mt-1.5">
+            <PriceField name="fee" label="del barrio nuevo" placeholder="5000" />
+          </div>
+        </div>
+      </div>
+      <Alert state={state} />
+      <div className="flex flex-wrap gap-2">
+        <SubmitButton>Agregar</SubmitButton>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="inline-flex items-center gap-1.5 rounded-full border-2 border-line px-4 py-2 text-sm font-bold transition hover:border-brand-400"
+        >
+          <X className="size-4" aria-hidden="true" />
+          Cancelar
+        </button>
+      </div>
+    </form>
   );
 }
 
@@ -151,6 +251,8 @@ export function ZonesManager({ zones }: { zones: AdminZone[] }) {
   const [editing, setEditing] = useState<string | null>(null);
   const [amount, setAmount] = useState("");
   const [preview, setPreview] = useState(false);
+  const [openFilters, setOpenFilters] = useState(false);
+  const [openRaise, setOpenRaise] = useState(false);
   const [raised, raise] = useActionState<FormState, FormData>(raiseZoneFees, {});
   const lastOk = useRef<string | undefined>(undefined);
 
@@ -174,6 +276,8 @@ export function ZonesManager({ zones }: { zones: AdminZone[] }) {
     const byFee = onlyFee ? zones.filter((zone) => zone.fee === Number(onlyFee)) : zones;
     // Se busca con el mismo reconocimiento del carrito: tolera tildes y errores de escritura.
     const matched = query.trim() ? searchZones(query, byFee, byFee.length) : byFee;
+    // Buscando, el orden por parecido manda sobre el resto.
+    if (query.trim() && sort === "nombre") return matched;
 
     const order = [...matched];
     if (sort === "nombre") order.sort((a, b) => a.name.localeCompare(b.name, "es"));
@@ -182,13 +286,13 @@ export function ZonesManager({ zones }: { zones: AdminZone[] }) {
     if (sort === "reciente") {
       order.sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""));
     }
-    // Buscando, el orden por parecido manda sobre el resto.
-    return query.trim() && sort === "nombre" ? matched : order;
+    return order;
   }, [zones, query, onlyFee, sort]);
 
   const pages = Math.max(1, Math.ceil(found.length / PER_PAGE));
   const current = Math.min(page, pages);
-  const shown = found.slice((current - 1) * PER_PAGE, current * PER_PAGE);
+  const from = (current - 1) * PER_PAGE;
+  const shown = found.slice(from, from + PER_PAGE);
 
   const pickedHere = found.filter((zone) => picked.has(zone.id));
   const allPicked = found.length > 0 && pickedHere.length === found.length;
@@ -222,62 +326,82 @@ export function ZonesManager({ zones }: { zones: AdminZone[] }) {
     if (headRef.current) headRef.current.indeterminate = somePicked;
   }, [somePicked]);
 
+  // Hasta 5 números de página alrededor del actual.
+  const numbers = useMemo(() => {
+    const first = Math.max(1, Math.min(current - 2, pages - 4));
+    return Array.from({ length: Math.min(5, pages) }, (_, i) => first + i);
+  }, [current, pages]);
+
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-start">
       <Card
         title="Barrios con domicilio"
-        description={`${zones.length} ${zones.length === 1 ? "barrio guardado" : "barrios guardados"}. Marca los que quieras para subirles el valor de una sola vez.`}
+        description="Administra los barrios y el valor del domicilio."
       >
         <div className="space-y-3">
-          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
-            <label className="relative block min-w-0">
-              <span className="sr-only">Buscar barrio</span>
-              <Search
-                aria-hidden="true"
-                className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-soft"
-              />
-              <input
-                value={query}
+          <AddZone />
+
+          <div className="border-t border-line pt-1 lg:border-0 lg:pt-0">
+            <Fold
+              icon={ListFilter}
+              label="Filtros y búsqueda"
+              open={openFilters}
+              onToggle={() => setOpenFilters((on) => !on)}
+            />
+            <div
+              className={`grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto_auto] ${
+                openFilters ? "mt-2" : "hidden"
+              } lg:!grid`}
+            >
+              <label className="relative block min-w-0 sm:col-span-2 lg:col-span-1">
+                <span className="sr-only">Buscar barrio</span>
+                <Search
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-soft"
+                />
+                <input
+                  value={query}
+                  onChange={(event) => {
+                    setQuery(event.target.value);
+                    setPage(1);
+                  }}
+                  placeholder="Buscar barrio…"
+                  className={`${inputClass} pl-9`}
+                />
+              </label>
+              <select
+                value={onlyFee}
                 onChange={(event) => {
-                  setQuery(event.target.value);
+                  setOnlyFee(event.target.value);
                   setPage(1);
                 }}
-                placeholder="Buscar barrio…"
-                className={`${inputClass} pl-9`}
-              />
-            </label>
-            <select
-              value={onlyFee}
-              onChange={(event) => {
-                setOnlyFee(event.target.value);
-                setPage(1);
-              }}
-              aria-label="Filtrar por valor del domicilio"
-              className={inputClass}
-            >
-              <option value="">Todos los valores</option>
-              {fees.map((fee) => (
-                <option key={fee} value={fee}>
-                  {formatCOP(fee)}
-                </option>
-              ))}
-            </select>
-            <select
-              value={sort}
-              onChange={(event) => setSort(event.target.value as Sort)}
-              aria-label="Ordenar por"
-              className={inputClass}
-            >
-              {SORTS.map(({ value, label }) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
+                aria-label="Filtrar por valor del domicilio"
+                className={inputClass}
+              >
+                <option value="">Todos los valores</option>
+                {fees.map((fee) => (
+                  <option key={fee} value={fee}>
+                    {formatCOP(fee)}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={sort}
+                onChange={(event) => setSort(event.target.value as Sort)}
+                aria-label="Ordenar por"
+                className={inputClass}
+              >
+                {SORTS.map(({ value, label }) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="overflow-hidden rounded-xl border border-line">
-            <div className="flex items-center gap-3 border-b border-line bg-cream/60 px-3 py-2.5">
+            <div className="flex items-center gap-2.5 border-b border-line bg-cream/60 px-3 py-2.5">
               <input
                 ref={headRef}
                 type="checkbox"
@@ -292,16 +416,16 @@ export function ZonesManager({ zones }: { zones: AdminZone[] }) {
               <span className="shrink-0 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
                 Domicilio
               </span>
-              <span className="hidden w-28 shrink-0 text-right text-xs font-bold uppercase tracking-[0.12em] text-ink-soft sm:block">
+              <span className="hidden w-16 shrink-0 text-right text-xs font-bold uppercase tracking-[0.12em] text-ink-soft sm:max-lg:block xl:block">
                 Cambiado
               </span>
-              <span className="w-[5.25rem] shrink-0" />
+              <span className="w-20 shrink-0" />
             </div>
 
             {shown.length === 0 ? (
               <p className="px-3 py-6 text-center text-sm text-ink-soft">
                 {zones.length === 0
-                  ? "Todavía no has cargado ningún barrio."
+                  ? "Todavía no has agregado ningún barrio."
                   : "Ningún barrio coincide con la búsqueda."}
               </p>
             ) : (
@@ -322,29 +446,44 @@ export function ZonesManager({ zones }: { zones: AdminZone[] }) {
 
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm text-ink-soft">
-              {found.length} {found.length === 1 ? "barrio" : "barrios"}
+              {found.length === 0
+                ? "Sin barrios"
+                : `Mostrando ${from + 1}-${from + shown.length} de ${found.length}`}
               {pickedHere.length > 0 && ` · ${pickedHere.length} marcados`}
             </p>
             {pages > 1 && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <button
                   type="button"
                   onClick={() => setPage(current - 1)}
                   disabled={current <= 1}
                   aria-label="Página anterior"
-                  className="grid size-10 place-items-center rounded-full border-2 border-line transition hover:border-brand-400 disabled:opacity-35"
+                  className="grid size-9 place-items-center rounded-full border-2 border-line transition hover:border-brand-400 disabled:opacity-35"
                 >
                   <ChevronLeft className="size-4" aria-hidden="true" />
                 </button>
-                <span className="text-sm font-bold" aria-live="polite">
-                  {current} de {pages}
-                </span>
+                {numbers.map((number) => (
+                  <button
+                    key={number}
+                    type="button"
+                    onClick={() => setPage(number)}
+                    aria-label={`Página ${number}`}
+                    aria-current={number === current ? "page" : undefined}
+                    className={`grid size-9 place-items-center rounded-full text-sm font-bold transition ${
+                      number === current
+                        ? "bg-brand-500 text-ink"
+                        : "border-2 border-line hover:border-brand-400"
+                    }`}
+                  >
+                    {number}
+                  </button>
+                ))}
                 <button
                   type="button"
                   onClick={() => setPage(current + 1)}
                   disabled={current >= pages}
                   aria-label="Página siguiente"
-                  className="grid size-10 place-items-center rounded-full border-2 border-line transition hover:border-brand-400 disabled:opacity-35"
+                  className="grid size-9 place-items-center rounded-full border-2 border-line transition hover:border-brand-400 disabled:opacity-35"
                 >
                   <ChevronRight className="size-4" aria-hidden="true" />
                 </button>
@@ -355,38 +494,51 @@ export function ZonesManager({ zones }: { zones: AdminZone[] }) {
       </Card>
 
       {/* ------------------------------- Aumento de varios a la vez */}
-      <Card
-        title="Subir varios domicilios"
-        description="Le suma el mismo valor a cada barrio marcado. No reemplaza el valor: lo aumenta."
-      >
-        <form action={raise} className="space-y-4">
+      <Card>
+        <Fold
+          icon={Coins}
+          label="Actualización masiva de tarifas"
+          open={openRaise}
+          onToggle={() => setOpenRaise((on) => !on)}
+        />
+        <h2 className="hidden font-display text-2xl font-extrabold uppercase leading-none tracking-wide lg:flex lg:items-center lg:gap-2">
+          <Coins className="size-5 text-brand-700" aria-hidden="true" />
+          Subir varios
+        </h2>
+
+        <form action={raise} className={`space-y-4 ${openRaise ? "mt-3" : "hidden"} lg:!block lg:mt-4`}>
           <input type="hidden" name="ids" value={chosen.map((zone) => zone.id).join(",")} />
 
-          <p className="rounded-xl bg-cream px-3.5 py-2.5 text-sm font-semibold">
-            {chosen.length === 0
-              ? "Ningún barrio marcado"
-              : `${chosen.length} ${chosen.length === 1 ? "barrio marcado" : "barrios marcados"}`}
+          <p className="flex items-center gap-2 rounded-xl bg-brand-50 px-3 py-2.5 text-sm font-bold text-brand-800 lg:mb-4">
+            <span className="flex-1">
+              {chosen.length === 0
+                ? "Ningún barrio seleccionado"
+                : `${chosen.length} ${chosen.length === 1 ? "barrio seleccionado" : "barrios seleccionados"}`}
+            </span>
             {chosen.length > 0 && (
               <button
                 type="button"
                 onClick={() => setPicked(new Set())}
-                className="ml-2 font-bold text-brand-700 underline underline-offset-2"
+                aria-label="Quitar la selección"
+                className="grid size-7 shrink-0 place-items-center rounded-full transition hover:bg-brand-100"
               >
-                Desmarcar todos
+                <X className="size-4" aria-hidden="true" />
               </button>
             )}
           </p>
 
           <div>
-            <span className={labelClass}>Valor a sumar</span>
+            <span className={labelClass}>Valor a sumar (COP)</span>
             <span className="mt-0.5 block text-xs text-ink-soft">
-              Con 1000, un barrio de {formatCOP(4000)} pasa a {formatCOP(5000)}.
+              Se suma al valor actual: con 1000, un barrio de {formatCOP(4000)} pasa a{" "}
+              {formatCOP(5000)}.
             </span>
             <div className="mt-1.5">
               <PriceField
                 name="amount"
                 label="valor a sumar"
                 defaultValue={amount}
+                placeholder="1000"
                 onValueChange={setAmount}
               />
             </div>

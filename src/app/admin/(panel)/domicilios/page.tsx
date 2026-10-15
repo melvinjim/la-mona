@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { getAdminZones, getSite } from "@/lib/content";
 import { SurchargeForm } from "../../_components/DeliveryForms";
-import { ZonesImport } from "../../_components/ZonesImport";
 import { ZonesManager } from "../../_components/ZonesManager";
 import { ZonesSetupNotice, ZonesUpgradeNotice } from "../../_components/ZonesSetupNotice";
 
@@ -32,7 +31,6 @@ export default async function DomiciliosPage() {
         <>
           {zones.needsUpgrade && <ZonesUpgradeNotice />}
           <ZonesManager zones={zones.zones} />
-          <ZonesImport />
         </>
       )}
     </div>

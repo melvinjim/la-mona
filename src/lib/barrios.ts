@@ -1,4 +1,3 @@
-import { slug } from "./slug";
 import type { DeliveryZone } from "./types";
 
 /**
@@ -295,104 +294,8 @@ export function searchZones<T extends DeliveryZone>(
 }
 
 /* ------------------------------------------------------------------ */
-/* Lista de barrios en texto (para el panel)                           */
+/* Valores                                                             */
 /* ------------------------------------------------------------------ */
 
-/** Una línea por barrio: "San Isidro - 5000". Es lo que se muestra y se edita en el panel. */
-export const formatZoneLines = (zones: readonly DeliveryZone[]) =>
-  zones.map((zone) => `${zone.name} - ${zone.fee}`).join("\n");
-
-/** Valor en pesos de un texto como "5000", "5.000", "$ 5,000" o "5.000,00". */
-function parseFee(raw: string): number {
-  const withoutCents = raw.replace(/[.,]\d{1,2}$/, "");
-  return Number(withoutCents.replace(/\D/g, ""));
-}
-
+/** Menos de esto no es un domicilio, es un error de tecleo (ej. "5" por "5000"). */
 export const MIN_FEE = 100;
-
-/**
- * Lee una lista de barrios, una por línea, con el nombre y el valor separados por guion,
- * dos puntos, coma, punto y coma o tabulador (sirve pegar desde Excel):
- *   San Isidro - 5000
- *   Rebolo: $4.500
- * Devuelve los barrios leídos y un mensaje por cada línea que no se pudo usar.
- */
-export function parseZoneLines(text: string): { zones: DeliveryZone[]; errors: string[] } {
-  const zones: DeliveryZone[] = [];
-  const errors: string[] = [];
-  const seenNames = new Set<string>();
-  const seenIds = new Set<string>();
-
-  for (const line of text.split(/\r?\n/)) {
-    const clean = line.trim();
-    if (!clean) continue;
-
-    const parts = clean.match(/^(.*?\S)[\s:;,=|\t\-–—]*\$?\s*(\d[\d.,]*)\s*$/);
-    if (!parts) {
-      errors.push(`"${clean}": falta el valor del domicilio.`);
-      continue;
-    }
-
-    const name = parts[1].trim();
-    const fee = parseFee(parts[2]);
-    if (!Number.isFinite(fee) || fee < MIN_FEE) {
-      errors.push(`"${clean}": el valor es muy bajo; escríbelo completo, por ejemplo 5000.`);
-      continue;
-    }
-
-    const key = keysOf(name).plain;
-    if (!key) {
-      errors.push(`"${clean}": falta el nombre del barrio.`);
-      continue;
-    }
-    if (seenNames.has(key)) {
-      errors.push(`"${clean}": ese barrio está repetido.`);
-      continue;
-    }
-    seenNames.add(key);
-
-    const base = slug(name) || "barrio";
-    let id = base;
-    for (let n = 2; seenIds.has(id); n += 1) id = `${base}-${n}`;
-    seenIds.add(id);
-
-    zones.push({ id, name, fee });
-  }
-
-  return { zones, errors };
-}
-
-/* ------------------------------------------------------------------ */
-/* Guardar la lista en la base de datos                                */
-/* ------------------------------------------------------------------ */
-
-export type StoredZone = { id: number | string; name: string; fee: number };
-export type ZoneInput = { name: string; fee: number };
-
-/** Igual que la columna `name_key` de la tabla: sin espacios de sobra y en minúsculas. */
-const storedKey = (name: string) => name.trim().toLowerCase();
-
-/**
- * Compara los barrios que ya hay en la tabla con la lista nueva y dice qué hacer para dejarla
- * igual: quitar los que ya no están, actualizar los que cambiaron de valor o de escritura, y
- * agregar los nuevos. Así no se borra y se vuelve a crear todo cada vez que se guarda.
- */
-export function planZoneSync(current: readonly StoredZone[], desired: readonly ZoneInput[]) {
-  const wanted = new Map(desired.map((zone) => [storedKey(zone.name), zone]));
-  const existing = new Map(current.map((zone) => [storedKey(zone.name), zone]));
-
-  const deleteIds = current.filter((zone) => !wanted.has(storedKey(zone.name))).map((zone) => zone.id);
-
-  const updates = current.flatMap((zone) => {
-    const next = wanted.get(storedKey(zone.name));
-    return next && (next.name !== zone.name || next.fee !== zone.fee)
-      ? [{ id: zone.id, name: next.name, fee: next.fee }]
-      : [];
-  });
-
-  const inserts = desired
-    .filter((zone) => !existing.has(storedKey(zone.name)))
-    .map(({ name, fee }) => ({ name, fee }));
-
-  return { deleteIds, updates, inserts };
-}

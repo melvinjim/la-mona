@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { MIN_FEE, parseZoneLines, planZoneSync, type StoredZone } from "@/lib/barrios";
+import { MIN_FEE } from "@/lib/barrios";
 import { fileContent, getMenu, getSite } from "@/lib/content";
 import { sanitizeIncludes, sanitizeOptionGroups } from "@/lib/content-schema";
 import { formatCOP } from "@/lib/format";
@@ -257,49 +257,35 @@ async function adminClient(form: FormData) {
 const isState = (value: unknown): value is FormState =>
   typeof value === "object" && value !== null && !("from" in value);
 
-/**
- * Carga una lista pegada de barrios: agrega los que faltan y actualiza el valor de los que ya
- * están. **No borra nada**: lo que no venga en la lista se queda como estaba, porque antes
- * quitar una línea sin darse cuenta borraba ese barrio de la base de datos.
- */
-export async function importZones(
+/** Agrega un barrio a la lista. */
+export async function addZone(
   _previous: FormState,
   form: FormData,
 ): Promise<FormState> {
   const supabase = await adminClient(form);
   if (isState(supabase)) return supabase;
 
-  const { zones: desired, errors } = parseZoneLines(String(form.get("zones") ?? ""));
-  if (errors.length > 0) {
-    return fail(form, `No se guardó nada. Revisa estos barrios: ${errors.join(" ")}`);
+  const name = text(form, "name");
+  const fee = money(form, "fee");
+
+  if (!name) return fail(form, "Escribe el nombre del barrio.");
+  if (fee === undefined || fee < MIN_FEE) {
+    return fail(form, `El valor del domicilio va completo, por ejemplo ${formatCOP(5000)}.`);
   }
-  if (desired.length === 0) return fail(form, "No había ningún barrio en la lista.");
 
-  const { data: current, error: readError } = await supabase
-    .from("delivery_zones")
-    .select("id,name,fee");
-  if (readError) return fail(form, zonesProblem(readError.message));
-
-  const plan = planZoneSync((current ?? []) as StoredZone[], desired);
-
-  if (plan.updates.length > 0) {
-    const { error } = await supabase
-      .from("delivery_zones")
-      .upsert(plan.updates, { onConflict: "id" });
-    if (error) return fail(form, zonesProblem(error.message));
-  }
-  if (plan.inserts.length > 0) {
-    const { error } = await supabase.from("delivery_zones").insert(plan.inserts);
-    if (error) return fail(form, zonesProblem(error.message));
+  const { error } = await supabase.from("delivery_zones").insert({ name, fee });
+  if (error) {
+    return fail(
+      form,
+      // 23505: la columna name_key es única, o sea que ese barrio ya existe.
+      error.code === "23505"
+        ? `Ya tienes un barrio llamado "${name}".`
+        : zonesProblem(error.message),
+    );
   }
 
   revalidatePath("/", "layout");
-  const kept = plan.deleteIds.length;
-  return {
-    ok:
-      `Listo: ${plan.inserts.length} barrios nuevos y ${plan.updates.length} actualizados.` +
-      (kept > 0 ? ` Los otros ${kept} que ya tenías se quedaron como estaban.` : ""),
-  };
+  return { ok: `"${name}" quedó agregado con domicilio de ${formatCOP(fee)}.` };
 }
 
 /** Cambia el nombre o el valor de un solo barrio. */

@@ -17,8 +17,10 @@ export const site: SiteSettings = {
   whatsapp: "573019629614",
   chatMessage: "Hola, quisiera hacer una consulta.",
   phone: "",
-  address: "",
-  mapsUrl: "",
+  // Verificar la dirección exacta: Google la muestra como el cruce ("Cl. 47b & Cra. 22").
+  address: "Calle 47B #22-02, Barranquilla",
+  // Enlace por identificador del lugar: abre la ficha del restaurante en Google Maps.
+  mapsUrl: "https://maps.google.com/?cid=15158603491002946303",
 
   // Horario tal como aparece en el menú publicado. Verificar (¿cierra a la 1:00 a.m. o a la 1:00 p.m.?).
   hours: { open: "05:00", close: "01:00" },

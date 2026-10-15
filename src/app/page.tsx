@@ -1,4 +1,4 @@
-import { ArrowRight, Bike, BookOpen, type LucideIcon } from "lucide-react";
+import { ArrowRight, Bike, BookOpen, MapPin, type LucideIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { InstagramIcon } from "@/components/brand-icons";
@@ -8,22 +8,23 @@ import { getSite } from "@/lib/content";
 // La página se regenera sola cada 10 minutos; con el panel administrativo se actualiza al instante.
 export const revalidate = 600;
 
-function ChoiceCard({
-  href,
-  icon: Icon,
-  title,
-  text,
-}: {
+type Choice = {
   href: string;
   icon: LucideIcon;
   title: string;
   text: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="group flex h-full items-center gap-4 rounded-[1.75rem] bg-cream p-5 text-left shadow-pop ring-2 ring-white/70 transition hover:-translate-y-0.5 hover:bg-white active:translate-y-px sm:flex-col sm:items-start sm:gap-5 sm:p-7"
-    >
+  /** Lleva fuera del sitio (el mapa): se abre en otra pestaña. */
+  external?: boolean;
+  /** Cuánto ocupa en la rejilla cuando son tres. */
+  span?: string;
+};
+
+const cardClass =
+  "group flex h-full items-center gap-4 rounded-[1.75rem] bg-cream p-5 text-left shadow-pop ring-2 ring-white/70 transition hover:-translate-y-0.5 hover:bg-white active:translate-y-px sm:flex-col sm:items-start sm:gap-5 sm:p-7";
+
+function ChoiceCard({ href, icon: Icon, title, text, external = false }: Choice) {
+  const inside = (
+    <>
       <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-brand-500 text-ink shadow-[0_3px_0_var(--color-brand-800)] sm:size-[4.5rem]">
         <Icon className="size-8 sm:size-9" aria-hidden="true" />
       </span>
@@ -33,12 +34,23 @@ function ChoiceCard({
         </span>
         <span className="mt-1.5 block text-[0.95rem] font-medium leading-snug text-ink-soft sm:text-base">
           {text}
+          {external && <span className="sr-only"> (se abre en una pestaña nueva)</span>}
         </span>
       </span>
       <ArrowRight
         className="size-7 shrink-0 text-brand-700 transition group-hover:translate-x-1 sm:self-end"
         aria-hidden="true"
       />
+    </>
+  );
+
+  return external ? (
+    <a href={href} target="_blank" rel="noopener noreferrer" className={cardClass}>
+      {inside}
+    </a>
+  ) : (
+    <Link href={href} className={cardClass}>
+      {inside}
     </Link>
   );
 }
@@ -46,6 +58,39 @@ function ChoiceCard({
 /** Primera pantalla del dominio: el cliente elige entre ver el menú o pedir a domicilio. */
 export default async function Home() {
   const site = await getSite();
+
+  // Con menú, domicilios y mapa son tres: el mapa ocupa el ancho hasta que caben las tres.
+  const three = Boolean(site.delivery && site.mapsUrl);
+  const choices: Choice[] = [
+    {
+      href: "/menu",
+      icon: BookOpen,
+      title: "Ver el menú",
+      text: "Mira los platos y los precios del local.",
+    },
+    ...(site.delivery
+      ? [
+          {
+            href: "/domicilios",
+            icon: Bike,
+            title: "Pedir a domicilio",
+            text: "Arma tu pedido: te lo llevamos o pasas a recogerlo.",
+          },
+        ]
+      : []),
+    ...(site.mapsUrl
+      ? [
+          {
+            href: site.mapsUrl,
+            icon: MapPin,
+            title: "Cómo llegar",
+            text: site.address ?? "Te abrimos el mapa hasta el restaurante.",
+            external: true,
+            span: three ? "sm:col-span-2 lg:col-span-1" : undefined,
+          },
+        ]
+      : []),
+  ];
 
   return (
     <main className="relative isolate flex min-h-dvh flex-col overflow-hidden bg-brand-500 text-ink">
@@ -82,26 +127,19 @@ export default async function Home() {
         </h1>
 
         <ul
-          className={`mt-7 grid w-full gap-4 ${site.delivery ? "sm:grid-cols-2" : "mx-auto max-w-sm"}`}
+          className={`mt-7 grid w-full gap-4 ${
+            choices.length === 1
+              ? "mx-auto max-w-sm"
+              : three
+                ? "sm:grid-cols-2 lg:grid-cols-3"
+                : "sm:grid-cols-2"
+          }`}
         >
-          <li>
-            <ChoiceCard
-              href="/menu"
-              icon={BookOpen}
-              title="Ver el menú"
-              text="Mira los platos y los precios del local."
-            />
-          </li>
-          {site.delivery && (
-            <li>
-              <ChoiceCard
-                href="/domicilios"
-                icon={Bike}
-                title="Pedir a domicilio"
-                text="Arma tu pedido: te lo llevamos o pasas a recogerlo."
-              />
+          {choices.map((choice) => (
+            <li key={choice.href} className={choice.span}>
+              <ChoiceCard {...choice} />
             </li>
-          )}
+          ))}
         </ul>
 
         <OpenStatus hours={site.hours} timeZone={site.timeZone} className="mt-8" />

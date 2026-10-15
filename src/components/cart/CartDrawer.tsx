@@ -51,6 +51,23 @@ const inputClass =
 
 const labelClass = "text-sm font-bold";
 
+/**
+ * Sube el campo lo justo para que el teclado no lo tape.
+ *
+ * El cajón no cambia de alto al salir el teclado, así que su mitad de abajo queda debajo de él.
+ * Se mide hasta dónde se ve de verdad (visualViewport) y se desplaza el formulario solo lo que
+ * haga falta: sin eso, el campo que se está llenando puede quedar escondido tras el teclado.
+ */
+function keepInView(field: HTMLElement) {
+  const scroller = field.closest<HTMLElement>("[data-scroll]");
+  if (!scroller) return;
+
+  const view = window.visualViewport;
+  const seenUntil = view ? view.offsetTop + view.height : window.innerHeight;
+  const hidden = field.getBoundingClientRect().bottom + 24 - seenUntil;
+  if (hidden > 0) scroller.scrollTop += hidden;
+}
+
 /** Un campo que abre el teclado. Los redondeles y las casillas no cuentan. */
 const typesText = (target: EventTarget | null) =>
   (target instanceof HTMLInputElement &&
@@ -329,16 +346,13 @@ function CartPanel({ onClose }: { onClose: () => void }) {
             onSubmit={submit}
             onFocusCapture={(event) => {
               if (!typesText(event.target)) return;
-              // El teclado tarda en subir; recién después se centra el campo.
+              // El teclado tarda en subir; recién después se sabe cuánto tapa.
               const field = event.target as HTMLElement;
-              window.setTimeout(
-                () => field.scrollIntoView({ block: "center", behavior: "smooth" }),
-                320,
-              );
+              window.setTimeout(() => keepInView(field), 320);
             }}
             className="flex min-h-0 flex-auto flex-col"
           >
-            <div className="min-h-0 flex-auto overflow-y-auto overscroll-contain px-5 pb-6">
+            <div data-scroll className="min-h-0 flex-auto overflow-y-auto overscroll-contain px-5 pb-6">
               {/* --------------------------------- Paso 1: el pedido */}
               {step === 1 && (
                 <>

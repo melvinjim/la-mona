@@ -19,7 +19,7 @@ type Props = {
   validated: DeliveryZone | null;
   /** Ya intentó enviar: se marca en rojo lo que falta. */
   showError: boolean;
-  /** Intentó enviar con un barrio que no está en la zona de domicilios. */
+  /** Escribió un barrio que no está en la lista. No impide enviar el pedido. */
   notFound: boolean;
   inputClass: string;
 };
@@ -59,7 +59,13 @@ export function BarrioField({
   const typed = value.trim().length;
   // Sin resultados se avisa recién con 2 letras: con una sola todavía no quiere decir nada.
   const nothingFound = hasZones && !validated && open && typed >= 2 && matches.length === 0;
-  const problem = nothingFound || notFound || (showError && !validated && hasZones);
+  /**
+   * Que el barrio no esté en la lista no es culpa del cliente: puede que el restaurante no lo
+   * haya cargado todavía. Se avisa, pero el pedido sale igual y el domicilio se acuerda por
+   * chat. Lo único que no deja seguir es dejar el campo vacío.
+   */
+  const unknown = nothingFound || notFound;
+  const missing = showError && typed < 3;
 
   const choose = (zone: DeliveryZone) => {
     setOpen(false);
@@ -131,9 +137,11 @@ export function BarrioField({
           spellCheck={false}
           maxLength={80}
           placeholder="Busca tu barrio"
-          aria-invalid={problem}
+          aria-invalid={missing}
           aria-describedby={`${id}-estado`}
-          className={`${inputClass} pl-11 ${hasZones ? "pr-11" : ""} ${problem ? "border-red-600" : "border-line"}`}
+          className={`${inputClass} pl-11 ${hasZones ? "pr-11" : ""} ${
+            missing ? "border-red-600" : unknown ? "border-amber-400" : "border-line"
+          }`}
         />
       </div>
 
@@ -176,15 +184,16 @@ export function BarrioField({
               {validated.name} · Domicilio {formatCOP(validated.fee)}
             </span>
           </p>
-        ) : nothingFound || notFound ? (
-          <p className="flex items-start gap-2 rounded-xl bg-red-50 px-3 py-2 font-semibold text-red-800 ring-1 ring-red-200">
+        ) : missing ? (
+          <p className="font-semibold text-red-700">Escribe el nombre de tu barrio.</p>
+        ) : unknown ? (
+          <p className="flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2 font-semibold text-amber-900 ring-1 ring-amber-200">
             <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-            No encontramos ese barrio en nuestra zona de domicilios. Revisa cómo está escrito; si
-            no aparece, escríbenos por WhatsApp.
-          </p>
-        ) : showError && hasZones ? (
-          <p className="font-semibold text-red-700">
-            Escribe tu barrio y tócalo en la lista para sumar el domicilio.
+            <span>
+              Ese barrio no está en nuestra lista. Revisa cómo está escrito, o{" "}
+              <strong className="font-bold">envía el pedido igual</strong>: te confirmamos el
+              valor del domicilio por WhatsApp.
+            </span>
           </p>
         ) : (
           <p className="text-ink-soft">

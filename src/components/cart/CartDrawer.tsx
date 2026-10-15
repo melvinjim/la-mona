@@ -247,7 +247,13 @@ function CartPanel({ onClose }: { onClose: () => void }) {
 
     // Si no llegó a tocar su barrio en la lista, se intenta reconocer aquí mismo.
     const zone = validated ?? (delivering && hasZones && !barrioMissing ? resolveBarrio() : null);
-    const barrioInvalid = delivering && (barrioMissing || (hasZones && !zone));
+    /*
+     * Un barrio que no está en la lista no frena el pedido: puede que el restaurante no lo haya
+     * cargado, y eso no es culpa de quien pide. El pedido sale con el barrio tal como lo
+     * escribió y el domicilio marcado "por confirmar", para acordarlo por chat. Lo único que
+     * falta de verdad es no haber escrito nada.
+     */
+    const barrioInvalid = delivering && barrioMissing;
     if (nameInvalid || barrioInvalid || addressInvalid) {
       setTried(true);
       const first = nameInvalid ? "name" : barrioInvalid ? "barrio" : "address";
@@ -617,7 +623,11 @@ function CartPanel({ onClose }: { onClose: () => void }) {
                                 : "text-sm font-semibold text-amber-800"
                             }
                           >
-                            {validated ? formatCOP(validated.fee) : "Falta elegir el barrio"}
+                            {validated
+                              ? formatCOP(validated.fee)
+                              : notFound
+                                ? "Por confirmar"
+                                : "Falta elegir el barrio"}
                           </dd>
                         </div>
                       </>

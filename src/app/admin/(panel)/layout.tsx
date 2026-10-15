@@ -7,6 +7,7 @@ import { getSite } from "@/lib/content";
 import { supabaseReady } from "@/lib/supabase/config";
 import { currentAdmin } from "@/lib/supabase/server-client";
 import { signOut } from "../actions";
+import { PanelTabs } from "../_components/PanelTabs";
 import { SetupNotice } from "../_components/SetupNotice";
 
 export const metadata: Metadata = {
@@ -38,20 +39,7 @@ export default async function PanelLayout({ children }: { children: ReactNode })
             Panel
           </span>
 
-          <nav className="-mx-1 order-last flex w-full gap-1 sm:order-none sm:ml-2 sm:w-auto">
-            <Link href="/admin" className={tabClass}>
-              Menú
-            </Link>
-            <Link href="/admin/ajustes" className={tabClass}>
-              Ajustes
-            </Link>
-            <Link href="/admin/domicilios" className={tabClass}>
-              Domicilios
-            </Link>
-            <Link href="/admin/qr" className={tabClass}>
-              Código QR
-            </Link>
-          </nav>
+          <PanelTabs />
 
           <div className="ml-auto flex items-center gap-1">
             <Link

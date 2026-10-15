@@ -2,6 +2,59 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 
+/*
+ * Congelar la página de atrás mientras hay una ventana abierta.
+ *
+ * `overflow: hidden` en el body no frena el scroll táctil en el Safari del iPhone: la página
+ * sigue viva detrás y, al abrir el teclado, el propio Safari la desplaza para enseñar el campo,
+ * que es cuando se alcanzaba a ver el catálogo moverse por detrás del cajón. Fijando el body
+ * deja de poder moverse.
+ *
+ * Se lleva la cuenta de cuántas ventanas lo pidieron, porque el carrito y la ventana de un plato
+ * pueden solaparse y la primera en cerrarse no debe soltar la página. Y se suelta escribiendo
+ * los valores vacíos, nunca restaurando una copia: una copia tomada cuando ya estaba congelado
+ * dejaría la página trabada para siempre.
+ */
+let locks = 0;
+let frozenAt = 0;
+
+function freezePage() {
+  if (locks++ > 0) return;
+  frozenAt = window.scrollY;
+  const { style } = document.body;
+  style.position = "fixed";
+  style.top = `-${frozenAt}px`;
+  style.insetInline = "0";
+  style.width = "100%";
+}
+
+function thawPage(backToPlace: boolean) {
+  // La red de seguridad: sin ninguna ventana abierta se suelta igual, pase lo que pase.
+  if (locks > 0) locks -= 1;
+  if (locks > 0 && document.querySelector("dialog[open]")) return;
+
+  locks = 0;
+  const { style } = document.body;
+  style.position = "";
+  style.top = "";
+  style.insetInline = "";
+  style.width = "";
+  // De un tirón: el sitio tiene scroll suave, y animar la vuelta se ve como un salto.
+  if (backToPlace) window.scrollTo({ top: frozenAt, behavior: "instant" });
+}
+
+function useFrozenPage(active: boolean) {
+  useEffect(() => {
+    if (!active) return;
+    const hashBefore = window.location.hash;
+    freezePage();
+    return () => {
+      // Si se cerró tocando un enlace a una sección (#menu), manda ese enlace.
+      thawPage(window.location.hash === hashBefore);
+    };
+  }, [active]);
+}
+
 /**
  * Alto de lo que de verdad se ve, medido con la "ventana visual" del navegador.
  *
@@ -72,6 +125,7 @@ export function Modal({ open, onClose, label, variant, children }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
   // Solo el cajón del pedido, que es el que llega hasta abajo y lleva campos para escribir.
   const fitsKeyboard = variant === "drawer";
+  useFrozenPage(open);
   useVisibleHeight(open && fitsKeyboard);
 
   useEffect(() => {

@@ -338,7 +338,7 @@ function CartPanel({ onClose }: { onClose: () => void }) {
             }}
             className="flex min-h-0 flex-auto flex-col"
           >
-            <div className="min-h-0 flex-auto overflow-y-auto px-5 pb-6">
+            <div className="min-h-0 flex-auto overflow-y-auto overscroll-contain px-5 pb-6">
               {/* --------------------------------- Paso 1: el pedido */}
               {step === 1 && (
                 <>

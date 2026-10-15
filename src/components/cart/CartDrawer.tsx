@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, ShoppingBag, TriangleAlert, X } from "lucide-react";
+import { Check, Copy, ShoppingBag, Trash2, TriangleAlert, X } from "lucide-react";
 import { useId, useState, type FormEvent } from "react";
 import { matchZone, type ZoneMatch } from "@/lib/barrios";
 import { optionLabel, type ResolvedLine } from "@/lib/cart";
@@ -51,6 +51,13 @@ function LineDetails({ line }: { line: ResolvedLine }) {
   if (chosen.length === 0 && !line.note) return null;
   return (
     <ul className="mt-0.5 space-y-0.5 text-sm text-ink-soft">
+      {/*
+        Con adicionales cobrados se muestra lo que vale el plato solo: si no, el "+$3.000" del
+        adicional parece que se suma al precio de la línea, cuando ya está contado dentro.
+      */}
+      {line.unitPrice > line.item.price && (
+        <li>Precio base: {formatCOP(line.item.price)}</li>
+      )}
       {chosen.map(({ group, chosen: options }) => (
         <li key={group.id}>
           {group.title}: {options.map((choice) => optionLabel(choice)).join(", ")}
@@ -266,9 +273,10 @@ function CartPanel({ onClose }: { onClose: () => void }) {
                       <button
                         type="button"
                         onClick={() => remove(line.key)}
-                        className="rounded-full px-3 py-2 text-sm font-semibold underline decoration-ink/30 underline-offset-4 transition hover:text-brand-700"
+                        aria-label={`Quitar ${line.item.orderName} del pedido`}
+                        className="grid size-11 place-items-center rounded-full border border-line text-ink-soft transition hover:border-red-300 hover:bg-red-50 hover:text-red-700"
                       >
-                        Quitar
+                        <Trash2 className="size-5" aria-hidden="true" />
                       </button>
                     </div>
                   </li>

@@ -118,6 +118,11 @@ export function buildOrderMessage({
   for (const line of items) {
     parts.push(`*${line.qty} x ${line.item.orderName}* — ${formatCOP(line.total)}`);
     const suffix = line.qty > 1 ? " c/u" : "";
+    // Con adicionales cobrados se escribe aparte lo que vale el plato solo. Sin esta línea el
+    // "+$3.000" del adicional parece que hay que sumarlo al total, y ya está contado dentro.
+    if (line.unitPrice > line.item.price) {
+      parts.push(`   • Precio base: ${formatCOP(line.item.price)}${suffix}`);
+    }
     for (const { group, chosen } of line.choices) {
       if (chosen.length === 0) continue;
       parts.push(

@@ -41,6 +41,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export const viewport: Viewport = {
   themeColor: "#fc6402",
+  // Al abrir el teclado la página se encoge en vez de quedar tapada: así el botón de
+  // enviar y el campo que se está llenando siguen dentro de lo que se ve.
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

@@ -22,10 +22,12 @@ export function Field({
   children: ReactNode;
 }) {
   return (
-    <label className="block min-w-0">
+    // En columna y con el campo abajo del todo, para que dos campos lado a lado queden
+    // alineados aunque uno tenga la explicación más larga que el otro.
+    <label className="flex h-full min-w-0 flex-col">
       <span className={labelClass}>{label}</span>
       {hint && <span className="mt-0.5 block text-xs text-ink-soft">{hint}</span>}
-      <span className="mt-1.5 block">{children}</span>
+      <span className="mt-auto block pt-1.5">{children}</span>
     </label>
   );
 }

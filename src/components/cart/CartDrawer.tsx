@@ -38,6 +38,12 @@ export function CartDrawer({
 const inputClass =
   "mt-1.5 h-12 w-full rounded-2xl border-2 bg-white px-4 text-base outline-none transition placeholder:text-ink-soft/60 focus:border-brand-500";
 
+/** Un campo que abre el teclado. Los redondeles y las casillas no cuentan. */
+const typesText = (target: EventTarget | null) =>
+  (target instanceof HTMLInputElement &&
+    !["radio", "checkbox", "submit", "button"].includes(target.type)) ||
+  target instanceof HTMLTextAreaElement;
+
 function FieldError({ id, children }: { id: string; children: string }) {
   return (
     <p id={id} className="mt-1 text-sm font-semibold text-red-700">
@@ -78,6 +84,9 @@ function CartPanel({ onClose }: { onClose: () => void }) {
   );
   const [comments, setComments] = useState("");
   const [tried, setTried] = useState(false);
+  // Hay un campo de texto enfocado, o sea que en el celular el teclado está tapando media
+  // pantalla. Mientras tanto el pie se encoge para dejar sitio a lo que se está llenando.
+  const [typing, setTyping] = useState(false);
   const [status, setStatus] = useState<"idle" | "sent" | "copied" | "copy-failed">("idle");
   const [message, setMessage] = useState("");
 
@@ -217,7 +226,25 @@ function CartPanel({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       ) : (
-        <form noValidate onSubmit={submit} className="flex min-h-0 flex-auto flex-col">
+        <form
+          noValidate
+          onSubmit={submit}
+          onFocusCapture={(event) => {
+            if (!typesText(event.target)) return;
+            setTyping(true);
+            // El teclado tarda en subir; recién después se centra el campo.
+            const field = event.target as HTMLElement;
+            window.setTimeout(
+              () => field.scrollIntoView({ block: "center", behavior: "smooth" }),
+              320,
+            );
+          }}
+          onBlurCapture={(event) => {
+            // Pasar de un campo a otro no cierra el teclado: el pie sigue encogido.
+            if (!typesText(event.relatedTarget)) setTyping(false);
+          }}
+          className="flex min-h-0 flex-auto flex-col"
+        >
           <div className="min-h-0 flex-auto overflow-y-auto px-5 pb-6">
             {openState === "closed" && (
               <p className="mt-4 flex items-start gap-2.5 rounded-2xl bg-sand px-4 py-3 text-[0.95rem] font-semibold">
@@ -475,7 +502,7 @@ function CartPanel({ onClose }: { onClose: () => void }) {
 
             <dl className="space-y-1.5">
               {delivering && hasZones && (
-                <>
+                <div className={`space-y-1.5 ${typing ? "hidden md:block" : ""}`}>
                   <div className="flex items-baseline justify-between gap-3">
                     <dt className="text-sm font-bold uppercase tracking-[0.16em] text-ink-soft">
                       Total factura · {count} {count === 1 ? "producto" : "productos"}
@@ -496,10 +523,14 @@ function CartPanel({ onClose }: { onClose: () => void }) {
                       {validated ? formatCOP(validated.fee) : "Falta elegir el barrio"}
                     </dd>
                   </div>
-                </>
+                </div>
               )}
               <div
-                className={`flex items-baseline justify-between gap-3 ${delivering && hasZones ? "border-t border-line pt-2" : ""}`}
+                className={`flex items-baseline justify-between gap-3 ${
+                  delivering && hasZones
+                    ? `border-t border-line pt-2 ${typing ? "max-md:border-t-0 max-md:pt-0" : ""}`
+                    : ""
+                }`}
               >
                 <dt className="text-sm font-bold uppercase tracking-[0.16em] text-ink-soft">
                   {delivering && hasZones
@@ -512,7 +543,7 @@ function CartPanel({ onClose }: { onClose: () => void }) {
               </div>
             </dl>
             {delivering && !hasZones && (
-              <p className="mt-1.5 text-xs font-semibold text-amber-800">
+              <p className={`mt-1.5 text-xs font-semibold text-amber-800 ${typing ? "hidden md:block" : ""}`}>
                 Más el domicilio, que te confirmamos por WhatsApp.
               </p>
             )}
@@ -551,7 +582,9 @@ function CartPanel({ onClose }: { onClose: () => void }) {
             <button
               type="button"
               onClick={clear}
-              className="mx-auto mt-3 block rounded-full px-3 py-2 text-sm font-semibold text-ink-soft underline decoration-ink/30 underline-offset-4 transition hover:text-ink"
+              className={`mx-auto mt-3 rounded-full px-3 py-2 text-sm font-semibold text-ink-soft underline decoration-ink/30 underline-offset-4 transition hover:text-ink ${
+                typing ? "hidden md:block" : "block"
+              }`}
             >
               Vaciar pedido
             </button>

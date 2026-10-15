@@ -16,8 +16,5 @@ export const SUPABASE_KEY =
 
 export const supabaseReady = Boolean(SUPABASE_URL && SUPABASE_KEY);
 
-/** Nombre del bucket de Supabase Storage donde van las fotos del menú. */
-export const BUCKET = "menu";
-
 /** Las dos filas de la tabla `content`: el menú completo y los datos del sitio. */
 export type ContentKey = "menu" | "site";

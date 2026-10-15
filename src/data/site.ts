@@ -9,7 +9,6 @@ export const site: SiteSettings = {
   description:
     "Desayunos, ejecutivos, asados, cayeye, fritos y bebidas. Arma tu pedido y envíalo por WhatsApp, a domicilio o para recoger.",
   logo: "/logo.png",
-  heroImage: undefined, // ej. "/portada.jpg"
 
   instagram: "restlamona22",
   // WhatsApp donde llegan los pedidos del carrito: indicativo + número, solo dígitos.
@@ -32,14 +31,4 @@ export const site: SiteSettings = {
   deliverySurcharge: 1000,
   // Los barrios con domicilio y su valor NO van aquí: viven en la tabla delivery_zones de
   // Supabase y se editan desde el panel (pestaña Domicilios).
-
-  // Ventana de promoción al entrar al sitio. Para usarla: pon la imagen en /public, escribe su ruta
-  // en `image`, cambia `active` a true y, con cada promoción nueva, cambia el `id`.
-  promo: {
-    active: false,
-    id: "promo-1",
-    image: "", // ej. "/promo.jpg"
-    alt: "Promoción de Restaurante La Mona",
-    // cta: { label: "Ver el menú", href: "#menu" },
-  },
 };

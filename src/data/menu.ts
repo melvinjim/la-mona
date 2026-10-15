@@ -6,7 +6,6 @@ import type { MenuCategory, MenuItem } from "@/lib/types";
  * colombianos (COP), sin puntos: 8000 = $8.000. En la página de domicilios cada producto cuesta
  * `deliverySurcharge` (src/data/site.ts) más, salvo las categorías con `noDeliverySurcharge: true`.
  *
- * - Foto de un plato: `image: "/menu/mi-foto.jpg"` (archivo en public/menu) o la que se sube en el panel.
  * - Ocultar un plato por un rato: `available: false` (se muestra como "Agotado" y no se puede pedir).
  * - Un plato sin `price` se muestra en la carta pero no se puede pedir (hasta que se le ponga precio).
  * - Opciones al pedir (acompañantes, adicionales...): `options` de la categoría. Una opción con

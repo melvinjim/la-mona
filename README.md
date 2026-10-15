@@ -1,8 +1,8 @@
 # Restaurante La Mona — sitio web
 
 Página del restaurante: portada con dos caminos (**ver el menú** o **pedir a domicilio**), menú con precios,
-**carrito que suma el pedido, cobra el domicilio por barrio y lo envía por WhatsApp**, horario, medios de pago
-y ventana de promoción. Funciona en celular, tablet y computador. Hecha con **Next.js 16**
+**carrito que suma el pedido, cobra el domicilio por barrio y lo envía por WhatsApp**, horario y medios de
+pago. Es un menú de texto: no maneja fotos de platos. Funciona en celular, tablet y computador. Hecha con **Next.js 16**
 (App Router), **Tailwind CSS 4** y TypeScript; lista para desplegar en **Vercel**.
 
 ## Ver el sitio en tu computador
@@ -27,14 +27,14 @@ Abre <http://localhost:3000>. Los cambios se ven al guardar el archivo.
 
 ## Dónde se cambia cada cosa
 
-Los precios, los platos, las fotos, el horario y la promoción se editan desde el [panel
+Los precios, los platos, el horario y los datos del restaurante se editan desde el [panel
 administrativo](#panel-administrativo), sin tocar código. Los archivos de `src/data` son el respaldo y el
 contenido inicial; lo de abajo aplica cuando todavía no hay panel conectado o quieres cambiar el diseño.
 
 | Qué                                                                  | Archivo                                                         |
 | -------------------------------------------------------------------- | --------------------------------------------------------------- |
 | Platos, precios, categorías y opciones (acompañantes, adicionales)   | `src/data/menu.ts`                                              |
-| WhatsApp, horario, Instagram, dirección, medios de pago, promoción   | `src/data/site.ts`                                              |
+| WhatsApp, horario, Instagram, dirección, medios de pago               | `src/data/site.ts`                                              |
 | Colores (tomados del menú impreso)                                   | `src/app/globals.css`, bloque `@theme`                          |
 | Tipografías                                                          | `src/app/layout.tsx`                                            |
 | Logo                                                                 | `public/logo.png`, `src/app/icon.png`, `src/app/apple-icon.png` |
@@ -49,7 +49,7 @@ Para ocultar un plato por un rato sin borrarlo: `available: false` (se muestra c
 
 ## Carrito y pedido por WhatsApp
 
-Cada plato tiene un botón **+** que abre su ventana: foto, precio, lo que haya que elegir (acompañante, agua o
+Cada plato tiene un botón **+** que abre su ventana: precio, lo que haya que elegir (acompañante, agua o
 leche, adicionales), una nota y la cantidad. Siempre se abre, también en gaseosas o fritos, para poder ajustar
 cantidad y nota antes de agregar.
 El carrito solo existe en `/domicilios` (en `/menu` no hay botones para pedir). En **Mi pedido** el cliente
@@ -127,22 +127,6 @@ Domicilio (San Isidro): $5.000
   `src/lib/delivery.ts` (recargo), `src/components/cart/BarrioField.tsx` (el campo) y
   `src/app/admin/_components/DeliveryForms.tsx` (el panel).
 
-## Ventana de promoción
-
-Una imagen que aparece sola cuando alguien entra al sitio. Al cerrarla no vuelve a salir en ese navegador
-hasta que cambie el `id` de la promoción o la persona borre los datos del sitio. Se edita en el panel
-administrativo (pestaña **Ajustes**); sin panel, en `src/data/site.ts`:
-
-```ts
-promo: {
-  active: true,                 // false la apaga
-  id: "promo-oct-2026",         // cámbialo con cada promoción nueva para que la vuelvan a ver
-  image: "/promo.jpg",          // archivo dentro de /public
-  alt: "2x1 en desayunos hasta el viernes",
-  cta: { label: "Ver el menú", href: "#menu" },   // botón opcional
-},
-```
-
 ## Pendiente por completar
 
 Estos datos no estaban en la imagen del menú, por eso no aparecen todavía:
@@ -153,24 +137,17 @@ Estos datos no estaban en la imagen del menú, por eso no aparecen todavía:
   solos en la franja de información y en el pie de página.
 - **Horario**: el menú dice "5:00 a.m. a 1:00 a.m."; confirma si el cierre es a la 1:00 a.m. o a la 1:00 p.m.
   y ajusta `hours` en `src/data/site.ts`. El aviso "Abierto ahora / Cerrado ahora" se calcula con ese horario.
-- **Dedito pequeño**: en el menú aparece como "$7.00"; se cargó como `$7.000`. Confirma el precio.
 - **Logo**: se recortó de la imagen del menú (baja resolución). Reemplaza `public/logo.png` por el archivo original.
 
-## Fotos
+Los precios de `src/data/menu.ts` sí están verificados contra la carta impresa, incluido *Dedito pequeño*
+a **$700**. Ojo: lo que ve el sitio es el menú guardado en Supabase, que puede haberse editado desde el
+panel y apartado de este archivo.
 
-Desde el panel administrativo se suben con el botón **Subir foto** de cada plato, categoría o de la portada;
-quedan guardadas en Supabase Storage. Sin panel, copia las imágenes a `public/menu/` y referéncialas:
+## Sin fotos
 
-```ts
-{ name: "Lomo asado", price: 15000, image: "/menu/lomo-asado.jpg" }   // foto del plato
-{ id: "asados", ..., image: "/menu/asados.jpg" }                      // foto grande de la categoría (escritorio)
-```
-
-En `src/data/site.ts`, `heroImage: "/portada.jpg"` pone una foto en la portada. Next.js redimensiona y
-comprime las imágenes solo, así que se pueden subir fotos tomadas con el celular.
-
-Si algún día usas otro servicio de almacenamiento, agrega su dominio en `next.config.ts` →
-`images.remotePatterns` (Supabase y Vercel Blob ya están incluidos).
+El menú es solo texto y precios: no hay fotos de platos, de categorías ni de portada, y el panel no tiene
+dónde subirlas. La única imagen del sitio es el logo, `public/logo.png`, que se reemplaza cambiando ese
+archivo.
 
 ## Desplegar en Vercel
 
@@ -209,18 +186,17 @@ Sin GitHub también se puede: `npx vercel` desde esta carpeta.
 ## Panel administrativo
 
 Desde el celular, en `/admin` (o tocando el logo del pie de página), se editan precios, platos agotados,
-fotos, horario, contacto y la promoción. Cada vez que guardas, el sitio se actualiza al instante.
+horario y contacto. Cada vez que guardas, el sitio se actualiza al instante.
 
 El contenido vive en **Supabase**: el menú y los datos del restaurante en la tabla `content` (dos filas,
-`menu` y `site`, con la misma forma de `src/lib/types.ts`) y las fotos en el bucket `menu` de Supabase
-Storage. Si Supabase no está configurado, el sitio sigue funcionando con los archivos de `src/data` y el
+`menu` y `site`, con la misma forma de `src/lib/types.ts`). Si Supabase no está configurado, el sitio sigue funcionando con los archivos de `src/data` y el
 panel muestra las instrucciones de configuración.
 
 ### Conectarlo (una sola vez)
 
 1. Crea un proyecto gratis en [supabase.com](https://supabase.com).
 2. Abre **SQL Editor**, pega el archivo [`supabase/schema.sql`](supabase/schema.sql) y pulsa **Run**.
-   Eso crea la tabla, los permisos y el bucket de fotos.
+   Eso crea las tablas y los permisos.
 3. **Authentication → Users → Add user**: tu correo y una contraseña, marcando *Auto Confirm User*.
    En **Authentication → Providers → Email** desactiva *Enable sign ups*, para que nadie más se registre.
 4. Copia las llaves con el botón **Connect** de arriba, o en **Settings → API Keys**. Necesitas la
@@ -240,7 +216,7 @@ panel muestra las instrucciones de configuración.
 
 El menú que se ve es el de Supabase (lo editado en el panel). Si se actualiza `src/data/menu.ts` y se quiere cargar
 completo, en el panel, pestaña *Menú*, abajo del todo: **Avanzado → Reemplazar el menú por el del código**. Reemplaza
-todo el menú (platos, precios, opciones y fotos de platos) y pide confirmación; los barrios y los ajustes no se tocan.
+todo el menú (platos, precios y opciones) y pide confirmación; los barrios y los ajustes no se tocan.
 El menú del código también es el respaldo que se muestra si Supabase no responde.
 
 ### Código QR de las mesas
@@ -258,9 +234,6 @@ imprima aún.
   nunca rompa la página pública.
 - Al guardar se llama `revalidatePath("/")`, por eso el cambio se publica de inmediato. Sin eso, la página
   se regenera sola cada 10 minutos (`revalidate` en `src/app/page.tsx`).
-- Las fotos se reducen en el navegador (máx. 1600 px, WebP; `src/lib/image.ts`) y se suben directo a Supabase
-  Storage, sin pasar por el servidor; así se pueden tomar con el celular, no estorba el límite de tamaño de
-  Vercel y rinde el espacio gratis. El dominio ya está permitido en `next.config.ts`.
 - `src/proxy.ts` mantiene viva la sesión del panel. Solo corre en `/admin`.
 - Precios: se escriben o se suben y bajan de a $500 con los botones − y +. Los platos se ordenan con las
   flechas de cada uno y las categorías con *Subir* / *Bajar*.
@@ -269,6 +242,8 @@ imprima aún.
   varias, o **con cantidad** (botones + y −, para pedir 2 de queso o 10 de papas). Todo lo que se cobra
   aparte conviene dejarlo "con cantidad". El editor avisa si un grupo tiene precios y no lleva cantidad.
 - El WhatsApp se puede escribir con o sin el 57 de Colombia (`3019629614` o `573019629614`).
+- Lo que no se puede deshacer (borrar un plato, una categoría o un grupo de opciones) pregunta antes en la
+  misma página, con el nombre de lo que se va a borrar y el foco puesto en *Cancelar*.
 
 ## Mantener activo el proyecto de Supabase
 

@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, normalize } from "node:path";
 import { ImageResponse } from "next/og";
 import { getSite } from "@/lib/content";
 
@@ -9,6 +9,46 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 const FONT = "Barlow Condensed";
+
+const MIME: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  webp: "image/webp",
+  gif: "image/gif",
+  avif: "image/avif",
+};
+
+/**
+ * El logo convertido a data URI, que es lo único que entiende esta imagen.
+ *
+ * Normalmente es un archivo de /public ("/logo.png"), pero una instalación anterior pudo
+ * guardarlo como dirección web (antes se podía subir desde el panel): si se intentara leer esa
+ * dirección como un archivo, la imagen para compartir fallaría entera. Si no se puede cargar,
+ * devuelve null y la imagen sale sin logo en vez de romperse.
+ */
+async function loadLogo(logo: string): Promise<string | null> {
+  const type = MIME[logo.split(/[?#]/)[0].split(".").pop()?.toLowerCase() ?? ""] ?? "image/png";
+
+  try {
+    let bytes: Buffer;
+    if (/^https?:\/\//.test(logo)) {
+      const response = await fetch(logo);
+      if (!response.ok) return null;
+      bytes = Buffer.from(await response.arrayBuffer());
+    } else {
+      // El nombre viene de la base de datos: se mantiene dentro de /public.
+      const root = join(process.cwd(), "public");
+      const file = join(root, normalize(logo).replace(/^(\.\.[\\/])+/, ""));
+      if (!file.startsWith(root)) return null;
+      bytes = await readFile(file);
+    }
+    return `data:${type};base64,${bytes.toString("base64")}`;
+  } catch (error) {
+    console.error("[opengraph-image] No se pudo cargar el logo:", error);
+    return null;
+  }
+}
 
 /** Descarga solo las letras necesarias de Google Fonts. Si falla, se usa la fuente por defecto. */
 async function loadFont(weight: number, text: string) {
@@ -29,8 +69,7 @@ async function loadFont(weight: number, text: string) {
 
 export default async function OpenGraphImage() {
   const site = await getSite();
-  const logo = await readFile(join(process.cwd(), "public", site.logo));
-  const logoSrc = `data:image/png;base64,${logo.toString("base64")}`;
+  const logoSrc = await loadLogo(site.logo);
 
   const text = `${site.fullName} Menú disponible para llevar Desayunos · Ejecutivos · Asados · Domicilios`;
   const glyphs = text + text.toUpperCase();
@@ -140,18 +179,20 @@ export default async function OpenGraphImage() {
             justifyContent: "center",
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={logoSrc}
-            width={330}
-            height={330}
-            alt=""
-            style={{
-              borderRadius: 9999,
-              border: "10px solid #ffffff",
-              boxShadow: "0 28px 60px rgba(26,26,22,0.4)",
-            }}
-          />
+          {logoSrc && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logoSrc}
+              width={330}
+              height={330}
+              alt=""
+              style={{
+                borderRadius: 9999,
+                border: "10px solid #ffffff",
+                boxShadow: "0 28px 60px rgba(26,26,22,0.4)",
+              }}
+            />
+          )}
         </div>
       </div>
     ),

@@ -1,7 +1,6 @@
 "use client";
 
 import { X } from "lucide-react";
-import Image from "next/image";
 import { useId, useState, type FormEvent } from "react";
 import {
   MAX_NOTE,
@@ -15,7 +14,6 @@ import {
 import { formatCOP } from "@/lib/format";
 import type { OptionGroup } from "@/lib/types";
 import { buttonClass } from "../button-styles";
-import { ImageViewer } from "../ImageViewer";
 import { Modal } from "../Modal";
 import { useCart } from "./cart-context";
 import { Stepper } from "./Stepper";
@@ -109,24 +107,6 @@ function ProductForm({
       </button>
 
       <div className="min-h-0 flex-auto overflow-y-auto">
-        {item.image && (
-          <ImageViewer
-            src={item.image}
-            name={item.name}
-            price={item.price}
-            description={item.description}
-            className="relative block aspect-[16/9] w-full cursor-zoom-in bg-sand"
-          >
-            <Image
-              src={item.image}
-              alt=""
-              fill
-              sizes="(min-width: 640px) 512px, 100vw"
-              className="object-cover"
-            />
-          </ImageViewer>
-        )}
-
         <div className="px-5 pb-5 pt-6 sm:px-7">
           <p className="pr-12 text-xs font-bold uppercase tracking-[0.16em] text-ink-soft">
             {item.categoryName}
@@ -245,9 +225,11 @@ function ProductForm({
               maxLength={MAX_NOTE}
               rows={2}
               placeholder={
-                item.includes.length > 0
-                  ? "Ej: bebida de mora, sin cebolla"
-                  : "Ej: sin cebolla, bien asado"
+                item.drink
+                  ? "Ej: sin azúcar, poca azúcar, sin hielo"
+                  : item.includes.length > 0
+                    ? "Ej: bebida de mora, sin cebolla"
+                    : "Ej: sin cebolla, bien asado"
               }
               className="mt-2 w-full resize-none rounded-2xl border-2 border-line bg-white px-4 py-3 text-base outline-none transition placeholder:text-ink-soft/60 focus:border-brand-500"
             />

@@ -1,5 +1,5 @@
 import { formatCOP } from "./format";
-import type { MenuCategory, OptionChoice, OptionGroup } from "./types";
+import type { CategoryIcon, MenuCategory, OptionChoice, OptionGroup } from "./types";
 
 export const MAX_QTY = 99;
 export const MAX_NOTE = 140;
@@ -16,8 +16,9 @@ export type CatalogItem = {
   categoryName: string;
   price: number;
   description?: string;
-  image?: string;
   available: boolean;
+  /** Es una bebida: la nota sugiere "sin azúcar" en vez de "sin cebolla". */
+  drink: boolean;
   options: OptionGroup[];
   includes: string[];
 };
@@ -25,6 +26,9 @@ export type CatalogItem = {
 export type Catalog = Record<string, CatalogItem>;
 
 const normalize = (text: string) => text.trim().toLowerCase();
+
+/** Los íconos de las categorías de bebidas: jugos sellados, batidos, gaseosas y aguas. */
+const DRINK_ICONS = new Set<CategoryIcon>(["citrus", "cup", "water"]);
 
 /** Solo entran al catálogo los platos que tienen precio (propio o de la categoría). */
 export function buildCatalog(menu: MenuCategory[]): Catalog {
@@ -49,8 +53,8 @@ export function buildCatalog(menu: MenuCategory[]): Catalog {
         categoryName: category.name,
         price,
         description: item.description,
-        image: item.image,
         available: item.available !== false,
+        drink: DRINK_ICONS.has(category.icon),
         options: category.options ?? [],
         includes: category.includes?.items ?? [],
       };

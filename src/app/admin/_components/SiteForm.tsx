@@ -3,14 +3,12 @@
 import { useActionState } from "react";
 import type { SiteSettings } from "@/lib/types";
 import { saveSite, type FormState } from "../actions";
-import { ImageField } from "./ImageField";
 import { SubmitButton } from "./SubmitButton";
 import { Alert, Card, Field, inputClass, restore, Toggle } from "./ui";
 
 export function SiteForm({ site }: { site: SiteSettings }) {
   const [state, action] = useActionState<FormState, FormData>(saveSite, {});
   const old = restore(state.values);
-  const promo = site.promo;
 
   return (
     <form action={action} className="space-y-5">
@@ -42,13 +40,6 @@ export function SiteForm({ site }: { site: SiteSettings }) {
               />
             </Field>
           </div>
-          <ImageField name="logo" label="Logo" defaultValue={site.logo} />
-          <ImageField
-            name="heroImage"
-            label="Foto de portada"
-            hint="Opcional, se ve arriba del todo."
-            defaultValue={site.heroImage ?? ""}
-          />
         </div>
       </Card>
 
@@ -164,61 +155,6 @@ export function SiteForm({ site }: { site: SiteSettings }) {
               className={inputClass}
             />
           </Field>
-        </div>
-      </Card>
-
-      <Card
-        title="Promoción"
-        description="Ventana que se abre una sola vez a quien entra al sitio."
-      >
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <ImageField
-              name="promoImage"
-              label="Imagen de la promoción"
-              defaultValue={promo?.image ?? ""}
-            />
-          </div>
-          <Field
-            label="Identificador"
-            hint="Cámbialo con cada promoción nueva para que se vuelva a mostrar."
-          >
-            <input
-              name="promoId"
-              defaultValue={old.text("promoId", promo?.id ?? "promo-1")}
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Texto alternativo" hint="Describe la imagen, para accesibilidad.">
-            <input
-              name="promoAlt"
-              defaultValue={old.text("promoAlt", promo?.alt)}
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Texto del botón" hint="Opcional.">
-            <input
-              name="promoCtaLabel"
-              defaultValue={old.text("promoCtaLabel", promo?.cta?.label)}
-              placeholder="Ver el menú"
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Enlace del botón" hint='Puede ser "#menu".'>
-            <input
-              name="promoCtaHref"
-              defaultValue={old.text("promoCtaHref", promo?.cta?.href)}
-              placeholder="#menu"
-              className={inputClass}
-            />
-          </Field>
-          <div className="sm:col-span-2">
-            <Toggle
-              name="promoActive"
-              label="Mostrar la promoción al entrar"
-              defaultChecked={old.flag("promoActive", promo?.active ?? false)}
-            />
-          </div>
         </div>
       </Card>
 

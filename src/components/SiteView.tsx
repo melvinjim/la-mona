@@ -12,7 +12,6 @@ import { Hero } from "./Hero";
 import { InfoStrip } from "./InfoStrip";
 import { MenuSection } from "./MenuSection";
 import { MenuShell } from "./MenuShell";
-import { PromoModal } from "./PromoModal";
 
 /**
  * Las dos caras del sitio:
@@ -83,7 +82,6 @@ export async function SiteView({ mode }: { mode: SiteMode }) {
       </main>
 
       <Footer site={site} chat={chat} mode={mode} />
-      <PromoModal promo={site.promo} />
     </>
   );
 

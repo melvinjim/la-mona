@@ -2,12 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    // Dominios desde los que se pueden mostrar fotos subidas por el panel administrativo.
+    // El sitio ya no maneja fotos: la única imagen es el logo, y vive en /public.
+    // Esto queda solo por si una instalación anterior guardó el logo en Supabase Storage,
+    // cuando el panel todavía dejaba subirlo.
     remotePatterns: [
-      // Supabase Storage (el bucket "menu" del panel).
       { protocol: "https", hostname: "*.supabase.co", pathname: "/storage/v1/object/public/**" },
       { protocol: "https", hostname: "*.supabase.in", pathname: "/storage/v1/object/public/**" },
-      { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
     ],
   },
 };

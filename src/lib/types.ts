@@ -14,8 +14,6 @@ export type MenuItem = {
   /** Precio en pesos colombianos (COP). Si falta, se usa el precio de la categoría. */
   price?: number;
   description?: string;
-  /** Ruta dentro de /public (ej. "/menu/lomo-asado.jpg") o URL de un dominio permitido en next.config.ts */
-  image?: string;
   /** `false` muestra el plato como "Agotado" y no se puede pedir. */
   available?: boolean;
 };
@@ -61,8 +59,6 @@ export type MenuCategory = {
   navLabel?: string;
   icon: CategoryIcon;
   note?: string;
-  /** Foto de la categoría (se muestra en escritorio). */
-  image?: string;
   /** Precio único para toda la categoría (ej. todos los batidos a $7.000). */
   price?: number;
   /** "chips" muestra los items como etiquetas, sin precio individual. */
@@ -76,21 +72,6 @@ export type MenuCategory = {
   /** Opciones que se eligen al pedir cualquier plato de la categoría. */
   options?: OptionGroup[];
   includes?: IncludedList;
-};
-
-/** Ventana de promoción que se muestra al entrar al sitio (una vez por visitante). */
-export type Promo = {
-  active: boolean;
-  /**
-   * Identifica la promoción. Quien la cierra no la vuelve a ver hasta que cambie este valor
-   * (o hasta que borre los datos del navegador).
-   */
-  id: string;
-  /** Ruta en /public (ej. "/promo.jpg") o URL de un dominio permitido en next.config.ts */
-  image: string;
-  alt: string;
-  /** Botón opcional bajo la imagen. `href` puede ser "#menu" o un enlace externo. */
-  cta?: { label: string; href: string };
 };
 
 /** Barrio al que se hace domicilio y su valor fijo. Viene de la tabla `delivery_zones` de Supabase. */
@@ -112,8 +93,6 @@ export type SiteSettings = {
   fullName: string;
   description: string;
   logo: string;
-  /** Foto principal opcional para la portada. */
-  heroImage?: string;
   /** Usuario de Instagram, sin @. */
   instagram?: string;
   /** Número de WhatsApp con indicativo de país, solo dígitos (ej. "573001234567"). */
@@ -135,5 +114,4 @@ export type SiteSettings = {
    * 0 o vacío = mismos precios.
    */
   deliverySurcharge?: number;
-  promo?: Promo;
 };

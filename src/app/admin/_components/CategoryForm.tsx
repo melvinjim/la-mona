@@ -5,8 +5,8 @@ import { useActionState } from "react";
 import type { MenuCategory } from "@/lib/types";
 import { saveCategory, type FormState } from "../actions";
 import { ChoiceGrid } from "./ChoiceGrid";
+import { ConfirmAction } from "./ConfirmAction";
 import { IconPicker } from "./IconPicker";
-import { ImageField } from "./ImageField";
 import { OptionsEditor } from "./OptionsEditor";
 import { PriceField } from "./PriceField";
 import { SubmitButton } from "./SubmitButton";
@@ -135,14 +135,6 @@ export function CategoryForm({ category, index, total }: Props) {
                 pestaña Domicilios). Desmárcalo si esta categoría cuesta igual en los dos.
               </p>
             </div>
-            <div className="sm:col-span-2">
-              <ImageField
-                name="image"
-                label="Foto de la categoría"
-                hint="Se ve al lado del listado en computador."
-                defaultValue={category.image ?? ""}
-              />
-            </div>
           </div>
 
           <div>
@@ -188,14 +180,6 @@ export function CategoryForm({ category, index, total }: Props) {
                     </Field>
                   </div>
 
-                  <div className="mt-2.5">
-                    <ImageField
-                      name={`item-${row}-image`}
-                      label="Foto del plato"
-                      defaultValue={item.image ?? ""}
-                    />
-                  </div>
-
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <Toggle
                       name={`item-${row}-available`}
@@ -214,14 +198,14 @@ export function CategoryForm({ category, index, total }: Props) {
                         <span className="sr-only">Bajar {item.name}</span>
                       </SubmitButton>
                     )}
-                    <SubmitButton
+                    <ConfirmAction
                       intent={`remove-item-${row}`}
-                      variant="ghost"
-                      confirm={`¿Eliminar "${item.name}" del menú?`}
+                      question={`¿Eliminar "${item.name}" del menú?`}
+                      confirmLabel="Sí, eliminar"
                     >
                       <Trash2 className="size-4" aria-hidden="true" />
                       Eliminar
-                    </SubmitButton>
+                    </ConfirmAction>
                   </div>
                 </li>
               ))}
@@ -263,14 +247,16 @@ export function CategoryForm({ category, index, total }: Props) {
                 Bajar
               </SubmitButton>
             )}
-            <SubmitButton
+            <ConfirmAction
               intent="delete"
-              variant="ghost"
-              confirm={`¿Eliminar la categoría "${category.name}" y todos sus platos?`}
+              question={`¿Eliminar "${category.name}" con sus ${category.items.length} ${
+                category.items.length === 1 ? "plato" : "platos"
+              }?`}
+              confirmLabel="Sí, eliminar la categoría"
             >
               <Trash2 className="size-4" aria-hidden="true" />
               Eliminar categoría
-            </SubmitButton>
+            </ConfirmAction>
           </div>
         </form>
       </div>

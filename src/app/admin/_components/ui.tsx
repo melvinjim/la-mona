@@ -8,6 +8,10 @@ export const inputClass =
 export const labelClass =
   "block text-xs font-bold uppercase tracking-[0.12em] text-ink-soft";
 
+/** Botón secundario del panel: contorno sin relleno. */
+export const ghostClass =
+  "inline-flex items-center justify-center gap-2 rounded-full border-2 border-line px-4 py-2 text-sm font-bold transition hover:border-brand-400 disabled:opacity-50";
+
 export function Field({
   label,
   hint,

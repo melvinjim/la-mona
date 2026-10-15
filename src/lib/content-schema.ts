@@ -7,7 +7,6 @@ import type {
   MenuItem,
   OptionChoice,
   OptionGroup,
-  Promo,
   SiteSettings,
 } from "./types";
 
@@ -124,7 +123,6 @@ function sanitizeItem(raw: unknown): MenuItem | null {
     name,
     price: money(raw.price),
     description: filled(raw.description),
-    image: filled(raw.image),
     available: raw.available === false ? false : undefined,
   };
 }
@@ -142,7 +140,6 @@ function sanitizeCategory(raw: unknown): MenuCategory | null {
     navLabel: filled(raw.navLabel),
     icon: ICONS.includes(raw.icon as CategoryIcon) ? (raw.icon as CategoryIcon) : "plate",
     note: filled(raw.note),
-    image: filled(raw.image),
     price: money(raw.price),
     layout: raw.layout === "chips" ? "chips" : undefined,
     noDeliverySurcharge: raw.noDeliverySurcharge === true ? true : undefined,
@@ -192,19 +189,6 @@ export function sanitizeZones(raw: unknown): DeliveryZone[] {
   });
 }
 
-function sanitizePromo(raw: unknown): Promo | undefined {
-  if (!isObject(raw)) return undefined;
-  const cta = isObject(raw.cta) ? raw.cta : null;
-  const ctaLabel = cta && filled(cta.label);
-  const ctaHref = cta && filled(cta.href);
-  return {
-    active: raw.active === true,
-    id: filled(raw.id) ?? "promo-1",
-    image: filled(raw.image) ?? "",
-    alt: text(raw.alt) ?? "",
-    cta: ctaLabel && ctaHref ? { label: ctaLabel, href: ctaHref } : undefined,
-  };
-}
 
 /**
  * Datos del sitio guardados en la base de datos. Lo obligatorio que falte o esté mal toma el
@@ -221,7 +205,6 @@ export function sanitizeSite(raw: unknown, fallback: SiteSettings): SiteSettings
     fullName: filled(raw.fullName) ?? fallback.fullName,
     description: filled(raw.description) ?? fallback.description,
     logo: filled(raw.logo) ?? fallback.logo,
-    heroImage: filled(raw.heroImage),
     instagram: filled(raw.instagram),
     whatsapp: filled(raw.whatsapp),
     chatMessage: filled(raw.chatMessage) ?? fallback.chatMessage,
@@ -234,6 +217,5 @@ export function sanitizeSite(raw: unknown, fallback: SiteSettings): SiteSettings
     notAccepted: stringList(raw.notAccepted),
     delivery: typeof raw.delivery === "boolean" ? raw.delivery : fallback.delivery,
     deliverySurcharge: money(raw.deliverySurcharge) ?? fallback.deliverySurcharge,
-    promo: sanitizePromo(raw.promo),
   };
 }

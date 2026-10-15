@@ -1,5 +1,4 @@
 import { ArrowDown, Bike, ChefHat } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { formatCOP } from "@/lib/format";
 import { minPrice, type ChatLink } from "@/lib/order";
@@ -165,26 +164,10 @@ export function Hero({ site, menu, chat, mode }: Props) {
             />
           </div>
 
-          {site.heroImage ? (
-            <div className="relative mx-auto w-full max-w-lg lg:max-w-sm">
-              <div className="relative aspect-[16/10] overflow-hidden rounded-3xl border-4 border-white shadow-pop sm:aspect-[16/9] lg:aspect-[4/5] lg:rotate-2 lg:rounded-[2rem]">
-                <Image
-                  src={site.heroImage}
-                  alt=""
-                  fill
-                  priority
-                  sizes="(min-width: 1024px) 384px, (min-width: 640px) 512px, 90vw"
-                  className="object-cover"
-                />
-              </div>
-              {ordering && <DeliverySticker className="hidden lg:grid" />}
-            </div>
-          ) : (
-            <div className="relative mx-auto hidden w-full max-w-sm lg:block">
-              <PriceTicket menu={menu} />
-              {ordering && <DeliverySticker className="grid" />}
-            </div>
-          )}
+          <div className="relative mx-auto hidden w-full max-w-sm lg:block">
+            <PriceTicket menu={menu} />
+            {ordering && <DeliverySticker className="grid" />}
+          </div>
         </div>
       </div>
     </section>

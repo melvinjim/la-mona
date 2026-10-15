@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { restoreMenu, type FormState } from "../actions";
-import { SubmitButton } from "./SubmitButton";
+import { ConfirmAction } from "./ConfirmAction";
 import { Alert } from "./ui";
 
 /**
@@ -25,12 +25,12 @@ export function RestoreMenu() {
           panel se pierden. Los barrios y los ajustes no se tocan.
         </p>
         <Alert state={state} />
-        <SubmitButton
-          variant="ghost"
-          confirm="¿Reemplazar TODO el menú actual por el del código? Se pierden los cambios hechos desde el panel."
+        <ConfirmAction
+          question="¿Reemplazar todo el menú por el del código? Se pierde lo editado en el panel."
+          confirmLabel="Sí, reemplazar el menú"
         >
           Reemplazar el menú por el del código
-        </SubmitButton>
+        </ConfirmAction>
       </form>
     </details>
   );

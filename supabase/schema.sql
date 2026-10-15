@@ -33,39 +33,7 @@ create policy "content: escritura del administrador"
   using (true)
   with check (true);
 
--- 2. Fotos -------------------------------------------------------------------
--- Bucket público para las fotos de los platos, el logo, la portada y la promoción.
-
-insert into storage.buckets (id, name, public)
-values ('menu', 'menu', true)
-on conflict (id) do update set public = true;
-
-drop policy if exists "menu: lectura pública" on storage.objects;
-create policy "menu: lectura pública"
-  on storage.objects for select
-  to anon, authenticated
-  using (bucket_id = 'menu');
-
-drop policy if exists "menu: subir fotos" on storage.objects;
-create policy "menu: subir fotos"
-  on storage.objects for insert
-  to authenticated
-  with check (bucket_id = 'menu');
-
-drop policy if exists "menu: reemplazar fotos" on storage.objects;
-create policy "menu: reemplazar fotos"
-  on storage.objects for update
-  to authenticated
-  using (bucket_id = 'menu')
-  with check (bucket_id = 'menu');
-
-drop policy if exists "menu: borrar fotos" on storage.objects;
-create policy "menu: borrar fotos"
-  on storage.objects for delete
-  to authenticated
-  using (bucket_id = 'menu');
-
--- 3. Barrios de domicilio ----------------------------------------------------
+-- 2. Barrios de domicilio ----------------------------------------------------
 -- Cada barrio con su valor fijo de domicilio. Se editan en el panel (pestaña Domicilios);
 -- también se pueden cargar aquí: Table Editor -> delivery_zones -> Insert -> Import data from CSV.
 
@@ -95,7 +63,7 @@ create policy "delivery_zones: escritura del administrador"
 grant select on public.delivery_zones to anon, authenticated;
 grant insert, update, delete on public.delivery_zones to authenticated;
 
--- 4. Quién puede entrar ------------------------------------------------------
+-- 3. Quién puede entrar ------------------------------------------------------
 -- El usuario del panel se crea a mano en Supabase:
 --   Authentication → Users → "Add user" → correo y contraseña, con "Auto Confirm User".
 --

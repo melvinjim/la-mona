@@ -16,7 +16,6 @@ import type {
   MenuCategory,
   MenuItem,
   OptionGroup,
-  Promo,
   SiteSettings,
 } from "@/lib/types";
 
@@ -188,29 +187,11 @@ export async function saveSite(
     );
   }
 
-  const promoImage = text(form, "promoImage");
-  const promoActive = checked(form, "promoActive");
-  if (promoActive && !promoImage) {
-    return fail(form, "Para activar la promoción primero sube su imagen.");
-  }
-
-  const ctaLabel = text(form, "promoCtaLabel");
-  const ctaHref = text(form, "promoCtaHref");
-
-  const promo: Promo = {
-    active: promoActive,
-    id: text(form, "promoId") || "promo-1",
-    image: promoImage,
-    alt: text(form, "promoAlt") || `Promoción de ${fullName}`,
-    ...(ctaLabel && ctaHref ? { cta: { label: ctaLabel, href: ctaHref } } : {}),
-  };
-
   const site: SiteSettings = {
     name,
     fullName,
     description: text(form, "description") || current.description,
-    logo: text(form, "logo") || current.logo,
-    heroImage: optional(form, "heroImage"),
+    logo: current.logo,
     instagram: optional(form, "instagram")?.replace(/^@/, ""),
     whatsapp,
     chatMessage: text(form, "chatMessage") || current.chatMessage,
@@ -224,7 +205,6 @@ export async function saveSite(
     delivery: checked(form, "delivery"),
     // El recargo de domicilios se edita en la pestaña Domicilios: aquí se conserva tal cual.
     deliverySurcharge: current.deliverySurcharge,
-    promo,
   };
 
   const error = await save("site", site);
@@ -391,7 +371,6 @@ function readCategory(
       name: itemName,
       price: money(form, `item-${index}-price`),
       description: optional(form, `item-${index}-description`),
-      image: optional(form, `item-${index}-image`),
       ...(available ? {} : { available: false }),
     });
     rows.push(index);
@@ -411,7 +390,6 @@ function readCategory(
     navLabel: optional(form, "navLabel"),
     icon,
     note: optional(form, "note"),
-    image: optional(form, "image"),
     price: money(form, "price"),
     layout,
     // Sin marcar "Cobrar recargo en domicilios" la categoría cuesta igual en los dos menús.

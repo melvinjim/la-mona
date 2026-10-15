@@ -61,4 +61,3 @@ export function createLocalStore(key: string): LocalStore {
 
 export const cartStore = createLocalStore("lamona:cart:v1");
 export const customerStore = createLocalStore("lamona:customer:v1");
-export const promoStore = createLocalStore("lamona:promo-dismissed");

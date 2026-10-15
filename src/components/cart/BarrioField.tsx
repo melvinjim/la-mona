@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, MapPinned, TriangleAlert } from "lucide-react";
+import { Check, TriangleAlert } from "lucide-react";
 import type { ZoneMatch } from "@/lib/barrios";
 import { formatCOP } from "@/lib/format";
 import type { DeliveryZone } from "@/lib/types";
@@ -15,7 +15,6 @@ type Props = {
   onPick: (zone: DeliveryZone) => void;
   /** Hay lista de barrios: se valida y se cobra el domicilio. Sin lista solo se escribe. */
   hasZones: boolean;
-  zones: DeliveryZone[];
   /** Barrio ya validado (su domicilio cuenta en el total), o null. */
   validated: DeliveryZone | null;
   /** Resultado del último intento de validar: dudas o no encontrado. */
@@ -24,8 +23,6 @@ type Props = {
   showError: boolean;
   inputClass: string;
 };
-
-const byName = (a: DeliveryZone, b: DeliveryZone) => a.name.localeCompare(b.name, "es");
 
 /**
  * Barrio de entrega, aparte de la dirección. El cliente lo escribe (aunque sea con errores) y toca
@@ -38,7 +35,6 @@ export function BarrioField({
   onValidate,
   onPick,
   hasZones,
-  zones,
   validated,
   attempt,
   showError,
@@ -123,8 +119,8 @@ export function BarrioField({
         ) : attempt?.status === "none" ? (
           <p className="flex items-start gap-2 rounded-xl bg-red-50 px-3 py-2 font-semibold text-red-800 ring-1 ring-red-200">
             <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-            No encontramos ese barrio en nuestra zona de domicilios. Revisa cómo está escrito o
-            mira la lista de abajo.
+            No encontramos ese barrio en nuestra zona de domicilios. Revisa cómo está escrito; si
+            no aparece, escríbenos por WhatsApp.
           </p>
         ) : attempt?.status === "empty" ? (
           <p className="font-semibold text-red-700">Escribe el nombre de tu barrio y toca Validar.</p>
@@ -142,31 +138,6 @@ export function BarrioField({
           </p>
         )}
       </div>
-
-      {hasZones && (
-        <details className="mt-2 rounded-xl border border-line bg-cream/60 px-3 py-2">
-          <summary className="flex cursor-pointer items-center gap-2 text-sm font-bold">
-            <MapPinned className="size-4 text-brand-700" aria-hidden="true" />
-            Ver barrios con domicilio y su valor
-          </summary>
-          <ul className="mt-2 max-h-56 divide-y divide-line overflow-y-auto text-sm">
-            {[...zones].sort(byName).map((zone) => (
-              <li key={zone.id} className="flex items-baseline justify-between gap-3 py-1.5">
-                <button
-                  type="button"
-                  onClick={() => onPick(zone)}
-                  className="text-left font-semibold underline decoration-ink/25 underline-offset-4 transition hover:text-brand-700"
-                >
-                  {zone.name}
-                </button>
-                <span className="font-display text-lg font-bold text-brand-700">
-                  {formatCOP(zone.fee)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
     </div>
   );
 }

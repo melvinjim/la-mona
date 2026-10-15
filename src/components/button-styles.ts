@@ -4,6 +4,8 @@ const variants = {
   dark: "bg-ink text-white shadow-[0_3px_0_rgb(0_0_0/0.4)] hover:bg-black",
   light:
     "bg-white text-ink shadow-[0_3px_0_rgb(154_48_0/0.35)] hover:bg-brand-50",
+  danger:
+    "bg-red-700 text-white shadow-[0_3px_0_rgb(127_29_29)] hover:bg-red-800",
 } as const;
 
 const sizes = {

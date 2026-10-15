@@ -1,5 +1,4 @@
 import { Check, Plus } from "lucide-react";
-import Image from "next/image";
 import type {
   IncludedList,
   MenuCategory,
@@ -8,7 +7,6 @@ import type {
 } from "@/lib/types";
 import { AddButton, AddChip } from "./cart/AddButton";
 import { categoryIcons } from "./category-icons";
-import { ImageViewer } from "./ImageViewer";
 import { Price } from "./Price";
 
 function ItemRow({
@@ -24,59 +22,38 @@ function ItemRow({
   const soldOut = item.available === false;
 
   return (
-    <li className="flex gap-3.5 py-2.5">
-      {item.image && (
-        <ImageViewer
-          src={item.image}
-          name={item.name}
-          price={price}
-          description={item.description}
-          soldOut={soldOut}
-          itemId={ordering ? item.id : undefined}
-          className="relative size-[4.5rem] shrink-0 cursor-zoom-in self-center overflow-hidden rounded-2xl bg-sand"
+    <li className="py-2.5">
+      <div className="flex items-baseline gap-2">
+        <p
+          className={`text-[1.0625rem] font-semibold leading-snug ${soldOut ? "text-ink-soft line-through decoration-1" : ""}`}
         >
-          <Image
-            src={item.image}
-            alt=""
-            fill
-            sizes="72px"
-            className={`object-cover ${soldOut ? "grayscale" : ""}`}
-          />
-        </ImageViewer>
-      )}
-      <div className="min-w-0 flex-1 self-center">
-        <div className="flex items-baseline gap-2">
-          <p
-            className={`text-[1.0625rem] font-semibold leading-snug ${soldOut ? "text-ink-soft line-through decoration-1" : ""}`}
-          >
-            {item.name}
-          </p>
-          <span
-            aria-hidden="true"
-            className="relative -top-[0.2em] min-w-3 flex-1 border-b-2 border-dotted border-ink/35"
-          />
-          {soldOut ? (
-            <span className="rounded-full bg-sand px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-ink-soft">
-              Agotado
-            </span>
-          ) : (
-            price !== undefined && (
-              <>
-                <Price
-                  value={price}
-                  className="font-display text-[1.4rem] font-bold leading-none text-brand-700"
-                />
-                {ordering && <AddButton itemId={item.id} />}
-              </>
-            )
-          )}
-        </div>
-        {item.description && (
-          <p className="mt-0.5 text-sm leading-snug text-ink-soft">
-            {item.description}
-          </p>
+          {item.name}
+        </p>
+        <span
+          aria-hidden="true"
+          className="relative -top-[0.2em] min-w-3 flex-1 border-b-2 border-dotted border-ink/35"
+        />
+        {soldOut ? (
+          <span className="rounded-full bg-sand px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-ink-soft">
+            Agotado
+          </span>
+        ) : (
+          price !== undefined && (
+            <>
+              <Price
+                value={price}
+                className="font-display text-[1.4rem] font-bold leading-none text-brand-700"
+              />
+              {ordering && <AddButton itemId={item.id} />}
+            </>
+          )
         )}
       </div>
+      {item.description && (
+        <p className="mt-0.5 text-sm leading-snug text-ink-soft">
+          {item.description}
+        </p>
+      )}
     </li>
   );
 }
@@ -257,24 +234,12 @@ export function MenuSection({
           aria-hidden="true"
           className="relative hidden overflow-hidden rounded-r-[1.75rem] bg-brand-50 lg:block"
         >
-          {category.image ? (
-            <Image
-              src={category.image}
-              alt=""
-              fill
-              sizes="256px"
-              className="object-cover"
-            />
-          ) : (
-            <>
-              <div className="bg-dots-brand absolute inset-0" />
-              <div className="absolute inset-0 grid place-items-center">
-                <div className="grid size-36 place-items-center rounded-full bg-brand-100 shadow-[inset_0_0_0_10px_rgb(255_255_255/0.55)]">
-                  <Icon className="size-16 text-brand-500" strokeWidth={1.5} />
-                </div>
-              </div>
-            </>
-          )}
+          <div className="bg-dots-brand absolute inset-0" />
+          <div className="absolute inset-0 grid place-items-center">
+            <div className="grid size-36 place-items-center rounded-full bg-brand-100 shadow-[inset_0_0_0_10px_rgb(255_255_255/0.55)]">
+              <Icon className="size-16 text-brand-500" strokeWidth={1.5} />
+            </div>
+          </div>
         </div>
       </div>
     </section>

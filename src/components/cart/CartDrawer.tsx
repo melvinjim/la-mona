@@ -340,7 +340,6 @@ function CartPanel({ onClose }: { onClose: () => void }) {
                     onValidate={() => validate()}
                     onPick={pickZone}
                     hasZones={hasZones}
-                    zones={zones}
                     validated={validated}
                     attempt={attempt}
                     showError={tried}

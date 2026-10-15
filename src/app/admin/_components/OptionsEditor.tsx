@@ -5,6 +5,7 @@ import { useState } from "react";
 import { slug } from "@/lib/slug";
 import type { IncludedList, OptionChoice, OptionGroup } from "@/lib/types";
 import { ChoiceGrid } from "./ChoiceGrid";
+import { ConfirmAction } from "./ConfirmAction";
 import { labelClass } from "./ui";
 
 /**
@@ -134,7 +135,7 @@ export function OptionsEditor({ name, initial }: { name: string; initial: string
           >
             <legend className="sr-only">Grupo {group.title || gi + 1}</legend>
 
-            <div className="flex items-end gap-2">
+            <div className="flex flex-wrap items-end gap-2">
               <label className="block min-w-0 flex-1">
                 <span className={labelClass}>Nombre del grupo</span>
                 <input
@@ -145,18 +146,15 @@ export function OptionsEditor({ name, initial }: { name: string; initial: string
                   className={`${small} mt-1.5`}
                 />
               </label>
-              <button
-                type="button"
-                aria-label={`Quitar el grupo ${group.title || gi + 1}`}
-                onClick={() => {
-                  if (window.confirm(`¿Quitar el grupo "${group.title || "sin nombre"}"?`)) {
-                    patch({ groups: removeAt(draft.groups, gi) });
-                  }
-                }}
+              <ConfirmAction
+                label={`Quitar el grupo ${group.title || gi + 1}`}
+                question={`¿Quitar el grupo "${group.title || "sin nombre"}" con sus opciones?`}
+                confirmLabel="Sí, quitarlo"
+                onConfirm={() => patch({ groups: removeAt(draft.groups, gi) })}
                 className="grid size-11 shrink-0 place-items-center rounded-full border-2 border-red-200 text-red-700 transition hover:bg-red-50"
               >
                 <Trash2 className="size-4" aria-hidden="true" />
-              </button>
+              </ConfirmAction>
             </div>
 
             <ChoiceGrid

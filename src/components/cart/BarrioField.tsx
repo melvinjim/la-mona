@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, TriangleAlert } from "lucide-react";
+import { Check, ChevronDown, MapPin, TriangleAlert } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import { searchZones } from "@/lib/barrios";
 import { formatCOP } from "@/lib/format";
@@ -97,31 +97,45 @@ export function BarrioField({
         Barrio
       </label>
 
-      <input
-        id={id}
-        value={value}
-        onChange={(event) => {
-          onChange(event.target.value);
-          setActive(0);
-          setOpen(true);
-        }}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setOpen(false)}
-        onKeyDown={onKeyDown}
-        role={hasZones ? "combobox" : undefined}
-        aria-expanded={hasZones ? showList : undefined}
-        aria-controls={hasZones ? listId : undefined}
-        aria-autocomplete={hasZones ? "list" : undefined}
-        aria-activedescendant={showList ? `${listId}-${active}` : undefined}
-        autoComplete="off"
-        autoCapitalize="words"
-        spellCheck={false}
-        maxLength={80}
-        placeholder="Ej: San Isidro"
-        aria-invalid={problem}
-        aria-describedby={`${id}-estado`}
-        className={`${inputClass} ${problem ? "border-red-600" : "border-line"}`}
-      />
+      <div className="relative">
+        <MapPin
+          aria-hidden="true"
+          className="pointer-events-none absolute left-4 top-1/2 z-10 size-5 -translate-y-1/2 text-brand-600"
+        />
+        {hasZones && (
+          <ChevronDown
+            aria-hidden="true"
+            className={`pointer-events-none absolute right-4 top-1/2 z-10 size-5 -translate-y-1/2 text-ink-soft transition ${
+              showList ? "rotate-180" : ""
+            }`}
+          />
+        )}
+        <input
+          id={id}
+          value={value}
+          onChange={(event) => {
+            onChange(event.target.value);
+            setActive(0);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          onBlur={() => setOpen(false)}
+          onKeyDown={onKeyDown}
+          role={hasZones ? "combobox" : undefined}
+          aria-expanded={hasZones ? showList : undefined}
+          aria-controls={hasZones ? listId : undefined}
+          aria-autocomplete={hasZones ? "list" : undefined}
+          aria-activedescendant={showList ? `${listId}-${active}` : undefined}
+          autoComplete="off"
+          autoCapitalize="words"
+          spellCheck={false}
+          maxLength={80}
+          placeholder="Busca tu barrio"
+          aria-invalid={problem}
+          aria-describedby={`${id}-estado`}
+          className={`${inputClass} pl-11 ${hasZones ? "pr-11" : ""} ${problem ? "border-red-600" : "border-line"}`}
+        />
+      </div>
 
       {hasZones && (
         <ul
@@ -175,7 +189,7 @@ export function BarrioField({
         ) : (
           <p className="text-ink-soft">
             {hasZones
-              ? "Escribe tu barrio y tócalo en la lista: así se suma el valor del domicilio."
+              ? "Escribe las primeras letras de tu barrio y tócalo en la lista."
               : "Escribe tu barrio. El valor del domicilio te lo confirmamos por WhatsApp."}
           </p>
         )}

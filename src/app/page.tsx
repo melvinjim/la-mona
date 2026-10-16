@@ -4,7 +4,7 @@ import Link from "next/link";
 import { InstagramIcon } from "@/components/brand-icons";
 import { OpenStatus } from "@/components/OpenStatus";
 import { RestaurantSchema } from "@/components/RestaurantSchema";
-import { getSite } from "@/lib/content";
+import { getMenu, getSite } from "@/lib/content";
 
 // La página se regenera sola cada 10 minutos; con el panel administrativo se actualiza al instante.
 export const revalidate = 600;
@@ -58,7 +58,7 @@ function ChoiceCard({ href, icon: Icon, title, text, external = false }: Choice)
 
 /** Primera pantalla del dominio: el cliente elige entre ver el menú o pedir a domicilio. */
 export default async function Home() {
-  const site = await getSite();
+  const [site, menu] = await Promise.all([getSite(), getMenu()]);
 
   // Con menú, domicilios y mapa son tres: el mapa ocupa el ancho hasta que caben las tres.
   const three = Boolean(site.delivery && site.mapsUrl);
@@ -95,7 +95,7 @@ export default async function Home() {
 
   return (
     <main className="relative isolate flex min-h-dvh flex-col overflow-hidden bg-brand-500 text-ink">
-      <RestaurantSchema site={site} />
+      <RestaurantSchema site={site} menu={menu} />
       {/* Decoración: textura de puntos y círculos de color */}
       <div
         aria-hidden="true"

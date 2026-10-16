@@ -1,6 +1,7 @@
+import { formatCOP } from "@/lib/format";
 import { whatsappDigits } from "@/lib/order";
 import { siteUrl } from "@/lib/site-url";
-import type { SiteSettings } from "@/lib/types";
+import type { MenuCategory, SiteSettings } from "@/lib/types";
 
 const DAYS = [
   "Monday",
@@ -19,8 +20,14 @@ const DAYS = [
  * de dónde saca la dirección, el horario, el teléfono y el enlace al menú para mostrarlos en los
  * resultados. Sale de los mismos datos del panel, así que no hay nada que repetir a mano.
  */
-export function RestaurantSchema({ site }: { site: SiteSettings }) {
+export function RestaurantSchema({ site, menu }: { site: SiteSettings; menu: MenuCategory[] }) {
   const phone = site.phone || whatsappDigits(site);
+
+  // De barato a caro, sacado del menú de verdad: no es una estimación.
+  const prices = menu.flatMap((category) => [
+    ...category.items.flatMap((item) => item.price ?? []),
+    ...(category.price ? [category.price] : []),
+  ]);
 
   const data = {
     "@context": "https://schema.org",
@@ -33,6 +40,11 @@ export function RestaurantSchema({ site }: { site: SiteSettings }) {
     servesCuisine: "Colombiana",
     menu: `${siteUrl}/menu`,
     acceptsReservations: false,
+    currenciesAccepted: "COP",
+    ...(prices.length > 0
+      ? { priceRange: `${formatCOP(Math.min(...prices))}-${formatCOP(Math.max(...prices))}` }
+      : {}),
+    ...(site.payments.length > 0 ? { paymentAccepted: site.payments.join(", ") } : {}),
     ...(phone ? { telephone: `+${phone.replace(/^\+/, "")}` } : {}),
     ...(site.address
       ? {

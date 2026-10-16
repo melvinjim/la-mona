@@ -5,6 +5,7 @@ import { formatTime } from "@/lib/format";
 import type { ChatLink } from "@/lib/order";
 import type { SiteMode, SiteSettings } from "@/lib/types";
 import { InstagramIcon } from "./brand-icons";
+import { MadeBy } from "./MadeBy";
 import { buttonClass } from "./button-styles";
 import { ChatButton } from "./ChatButton";
 
@@ -154,9 +155,10 @@ export function Footer({ site, chat, mode }: Props) {
           </div>
         </div>
 
-        <p className="mt-12 border-t border-white/15 pt-6 text-sm text-white/60">
-          © {year} {site.fullName}. Precios en pesos colombianos (COP).
-        </p>
+        <div className="mt-12 flex flex-col gap-2 border-t border-white/15 pt-6 text-sm text-white/60 sm:flex-row sm:items-center sm:justify-between">
+          <p>© {year} {site.fullName}. Precios en pesos colombianos (COP).</p>
+          <MadeBy />
+        </div>
       </div>
     </footer>
   );

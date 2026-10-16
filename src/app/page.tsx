@@ -2,6 +2,7 @@ import { ArrowRight, Bike, BookOpen, MapPin, type LucideIcon } from "lucide-reac
 import Image from "next/image";
 import Link from "next/link";
 import { InstagramIcon } from "@/components/brand-icons";
+import { MadeBy } from "@/components/MadeBy";
 import { OpenStatus } from "@/components/OpenStatus";
 import { RestaurantSchema } from "@/components/RestaurantSchema";
 import { getMenu, getSite } from "@/lib/content";
@@ -158,6 +159,8 @@ export default async function Home() {
           </a>
         )}
       </div>
+
+      <MadeBy className="pb-7 text-center text-sm font-medium text-ink/70" />
     </main>
   );
 }

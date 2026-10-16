@@ -2,6 +2,7 @@
 
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import { useActionState } from "react";
+import { fingerprint } from "@/lib/fingerprint";
 import type { MenuCategory } from "@/lib/types";
 import { saveCategory, type FormState } from "../actions";
 import { ChoiceGrid } from "./ChoiceGrid";
@@ -64,6 +65,8 @@ export function CategoryForm({ category, index, total }: Props) {
             Guardar
           </button>
           <input type="hidden" name="categoryId" value={category.id} />
+          {/* Para avisar si otra persona cambia esta categoría mientras la tienes abierta. */}
+          <input type="hidden" name="seen" value={fingerprint(category)} />
           <input type="hidden" name="itemCount" value={category.items.length} />
 
           <div className="grid gap-3 sm:grid-cols-2">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { siteFingerprint } from "@/lib/fingerprint";
 import type { SiteSettings } from "@/lib/types";
 import { saveSite, type FormState } from "../actions";
 import { SubmitButton } from "./SubmitButton";
@@ -12,6 +13,8 @@ export function SiteForm({ site }: { site: SiteSettings }) {
 
   return (
     <form action={action} className="space-y-5">
+      {/* Para avisar si otra persona cambia los ajustes mientras los tienes abiertos. */}
+      <input type="hidden" name="seen" value={siteFingerprint(site)} />
       <Card title="El restaurante">
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Nombre corto">

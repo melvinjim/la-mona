@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { MIN_FEE } from "@/lib/barrios";
 import { fileContent, getMenu, getSite } from "@/lib/content";
 import { sanitizeIncludes, sanitizeOptionGroups } from "@/lib/content-schema";
+import { fingerprint, siteFingerprint } from "@/lib/fingerprint";
 import { formatCOP } from "@/lib/format";
 import { normalizeWhatsapp } from "@/lib/order";
 import { slug, uniqueId } from "@/lib/slug";
@@ -37,6 +38,13 @@ function fail(form: FormData, error: string): FormState {
   }
   return { error, values };
 }
+
+/**
+ * Otra persona guardó algo encima mientras esta página estaba abierta. No se pisa su trabajo:
+ * se avisa y lo escrito se conserva en pantalla, para volver a aplicarlo tras recargar.
+ */
+const clash = (what: string) =>
+  `Otra persona cambió ${what} mientras tenías esta página abierta. Recarga para ver lo que hay ahora y vuelve a aplicar tu cambio; lo que escribiste sigue aquí.`;
 
 const ICONS: CategoryIcon[] = [
   "egg",
@@ -167,6 +175,9 @@ export async function saveSite(
   form: FormData,
 ): Promise<FormState> {
   const current = await getSite();
+
+  const seen = text(form, "seen");
+  if (seen && seen !== siteFingerprint(current)) return fail(form, clash("los ajustes"));
 
   const name = text(form, "name");
   const fullName = text(form, "fullName");
@@ -511,6 +522,17 @@ export async function saveCategory(
   const menu = await getMenu();
   const position = menu.findIndex((category) => category.id === original);
   if (position === -1) return fail(form, "Esa categoría ya no existe. Recarga la página.");
+
+  /*
+   * El formulario trae todos los platos de la categoría, así que guardar con la página vieja
+   * borraría lo que otro acabó de cambiar en ella. Se compara con lo que hay guardado ahora.
+   * Solo mira esta categoría: quien edite otra no estorba, porque aquí se lee el menú fresco
+   * y solo se reemplaza esta.
+   */
+  const seen = text(form, "seen");
+  if (seen && seen !== fingerprint(menu[position])) {
+    return fail(form, clash(`"${menu[position].name}"`));
+  }
 
   if (intent === "delete") {
     const error = await save(

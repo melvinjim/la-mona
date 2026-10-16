@@ -62,8 +62,13 @@ export function RestaurantSchema({ site }: { site: SiteSettings }) {
   return (
     <script
       type="application/ld+json"
-      // El contenido lo arma el servidor con los datos del panel, no viene de nadie de fuera.
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      /*
+       * El "<" se escribe escapado porque JSON.stringify no lo toca: un nombre que llevara
+       * "</script>" cerraría esta etiqueta antes de tiempo y lo que viniera detrás correría
+       * como código en el navegador del cliente. Haría falta entrar al panel para lograrlo,
+       * pero el arreglo es una línea.
+       */
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }}
     />
   );
 }

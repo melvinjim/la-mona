@@ -36,6 +36,14 @@ export async function generateMetadata(): Promise<Metadata> {
       description: site.description,
     },
     twitter: { card: "summary_large_image", title, description: site.description },
+    /*
+     * Search Console puede pedir una etiqueta para comprobar que el sitio es tuyo. Si se crea
+     * la variable GOOGLE_SITE_VERIFICATION en Vercel, se escribe sola; sin ella no sale nada.
+     * No hace falta si se verifica el dominio por DNS, que es lo recomendable.
+     */
+    ...(process.env.GOOGLE_SITE_VERIFICATION
+      ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } }
+      : {}),
   };
 }
 

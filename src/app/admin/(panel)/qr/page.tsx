@@ -1,11 +1,10 @@
 import { Download, TriangleAlert } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
-import QRCode from "qrcode";
 import { getSite } from "@/lib/content";
-import { siteUrl } from "@/lib/site-url";
 import { PrintButton } from "../../_components/PrintButton";
 import { Card } from "../../_components/ui";
+import { qrPngDataUrl, qrTarget } from "./qr-code";
 
 export const metadata: Metadata = {
   title: "Código QR",
@@ -17,17 +16,8 @@ const downloadClass =
 
 export default async function QrPage() {
   const site = await getSite();
-  const url = `${siteUrl.replace(/\/$/, "")}/menu`;
-
-  const options = {
-    margin: 1,
-    errorCorrectionLevel: "M" as const,
-    color: { dark: "#1a1a16", light: "#ffffff" },
-  };
-  const [svg, png] = await Promise.all([
-    QRCode.toString(url, { ...options, type: "svg" }),
-    QRCode.toDataURL(url, { ...options, width: 1200 }),
-  ]);
+  const url = qrTarget;
+  const png = await qrPngDataUrl();
 
   // Un QR impreso con una dirección de prueba deja de servir cuando se compra el dominio.
   const provisional = /localhost|vercel\.app/.test(url);
@@ -90,15 +80,12 @@ export default async function QrPage() {
 
       <div className="flex flex-wrap justify-center gap-2 print:hidden">
         <PrintButton />
-        <a href={png} download="qr-menu-la-mona.png" className={downloadClass}>
+        {/* Archivos servidos por el servidor, no URLs `data:`: así también se guardan en iOS. */}
+        <a href="/admin/qr/descargar?formato=png" className={downloadClass}>
           <Download className="size-4" aria-hidden="true" />
           Descargar PNG
         </a>
-        <a
-          href={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`}
-          download="qr-menu-la-mona.svg"
-          className={downloadClass}
-        >
+        <a href="/admin/qr/descargar" className={downloadClass}>
           <Download className="size-4" aria-hidden="true" />
           Descargar SVG
         </a>
